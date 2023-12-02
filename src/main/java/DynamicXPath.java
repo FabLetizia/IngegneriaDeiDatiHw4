@@ -17,8 +17,8 @@ public class DynamicXPath {
         // Carica il documento XML dal file
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
-        Document document = builder.parse(xmlFile);
-        //Document document = parseXmlFile(xmlFile);
+//        Document document = builder.parse(xmlFile);  Non funziona (da capire perché) -> richiede i file nella Cartella dei "docs"
+        Document document = parseXmlFile(xmlFile); 	   // Funziona -> richiede i file nella Cartella del "progetto"
 
         // Crea un'istanza di XPath
         XPathFactory xPathFactory = XPathFactory.newInstance();
@@ -53,7 +53,8 @@ public class DynamicXPath {
         // Carica il documento XML dal file
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
-        Document document = builder.parse(xmlFile);
+//        Document document = builder.parse(xmlFile); 	Non funziona (da capire perché) -> richiede i file nella Cartella dei "docs"
+        Document document = parseXmlFile(xmlFile);		// Funziona -> richiede i file nella Cartella del "progetto"
 
         // Esegui la query XPath sul documento
         XPathFactory xPathFactory = XPathFactory.newInstance();
