@@ -1,37 +1,63 @@
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.NotDirectoryException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 public class Main {
-    private static final String DIRECTORY_PATH = "/Users/alessandropesare/xml_files";
-    private static final int SAMPLE_SIZE = 10;
+	private static final int SAMPLE_SIZE = 1000;
 
-    public static void main(String[] args) throws Exception {
-        // Benchmark XPath extraction
-        benchmarkXPathExtraction();
+	/* Lanciare il Programma passando i seguenti parametri al main(): 
+	 * [-xmlfiles XML_DIRECTORY] -> Path della Directory in cui ci sono i documenti .xml e i "parsing files"
+	 */
+	public static void main(String[] args) throws Exception {
+		// Benchmark XPath extraction
+		String directoryPath = null;
 
-        // Generate JSON files
-        //generateJsonFiles();
-    }
+		for (int i=0; i < args.length; i++) {
+			switch(args[i]) {
+			case "-xmldocs":
+				directoryPath = args[++i];
+				final Path docsDir = Paths.get(directoryPath);
+				boolean usableDocsDir = Files.isReadable(docsDir);
+				
+				if (usableDocsDir)
+					break;
+				else
+					throw new NotDirectoryException("La Directory '" + docsDir.toAbsolutePath() + "' non esiste oppure non è accessibile in lettura");
+			
+			default:
+				throw new IllegalArgumentException("Parametro Sconosciuto " + args[i]);
+			}
+		}
 
-    private static void benchmarkXPathExtraction() throws Exception {
-        BaseXPathFinder dynamicXPath = new ArticleIdXPathFinder();
+		benchmarkXPathExtraction(directoryPath);
 
-        // Extract a random sample of files
-        List<File> sampleFiles = FileUtil.getRandomSampleFromDirectory(DIRECTORY_PATH, SAMPLE_SIZE);
+		// Generate JSON files
+		//generateJsonFiles();
+	}
 
-        // For each file in the sample, find the best XPath expression and print the result
-        for (File file : sampleFiles) {
-            System.out.println("File selected: " + file.getName());
+	private static void benchmarkXPathExtraction(String directoryPath) throws Exception {
+		BaseXPathFinder dynamicXPath = new ArticleIdXPathFinder();
 
-            String bestXPath = dynamicXPath.findBestXPath(file.getAbsolutePath(), "pmc");
-            System.out.println("Best XPath: " + bestXPath);
-            System.out.println("Extracted Value: " + dynamicXPath.extractValue(file.getAbsolutePath(), bestXPath));
-            System.out.println();
-        }
-    }
+		// Extract a random sample of files
+		List<File> sampleFiles = FileUtil.getRandomSampleFromDirectory(directoryPath, SAMPLE_SIZE);
 
-    //TO-DO (L'idea è di non caricarsi tutti i file xml in memoria ma analizzarli come stream)
-    /*private static void generateJsonFiles() throws Exception {
+		// For each file in the sample, find the best XPath expression and print the result
+		for (File file : sampleFiles) {
+			System.out.println("File selected: " + file.getName());
+			String fileURI = file.toURI().toASCIIString();
+
+			String bestXPath = dynamicXPath.findBestXPath(fileURI, "pmc");
+			System.out.println("Best XPath: " + bestXPath);
+			System.out.println("Extracted Value: " + dynamicXPath.extractValue(fileURI, bestXPath));
+			System.out.println();
+		}
+	}
+
+	//TO-DO (L'idea è di non caricarsi tutti i file xml in memoria ma analizzarli come stream)
+	/*private static void generateJsonFiles() throws Exception {
         BaseXPathFinder dynamicXPath = new ArticleIdXPathFinder();
 
         // Get a list of all XML files in the directory
