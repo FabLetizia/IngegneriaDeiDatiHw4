@@ -20,17 +20,17 @@
   <dependencies>
     <!-- Dipendenza per API XPath -->
     <dependency>
-      <groupId>javax.xml</groupId>
-      <artifactId>jaxp-api</artifactId>
-      <version>1.4.6</version>
+      <groupId>javax.xml.bind</groupId>
+      <artifactId>jaxb-api</artifactId>
+      <version>2.3.1</version>
     </dependency>
 
     <!-- Dipendenza per Document Object Model (DOM) -->
-    <dependency>
+<!--    <dependency>
       <groupId>org.w3c.dom</groupId>
       <artifactId>dom</artifactId>
       <version>3.0.1</version>
-    </dependency>
+    </dependency>-->
 
     <!-- Dipendenza per JUnit (preservata dal tuo POM originale) -->
     <dependency>
