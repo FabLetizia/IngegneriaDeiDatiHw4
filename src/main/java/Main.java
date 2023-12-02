@@ -5,10 +5,10 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         // Directory contenente i file XML
-        String directoryPath = "/Users/alessandropesare/xml_files";
+        String directoryPath = "E:/Riccardo/Università/Anno V/I SEMESTRE/Ingegneria dei Dati - 6 CFU/Homework/HW4/hw4-privato/docs";
 
         // Numero di file da selezionare casualmente
-        int sampleSize = 10; // Puoi modificare questo valore in base alle tue esigenze
+        int sampleSize = 50; // Puoi modificare questo valore in base alle tue esigenze
 
         // Estrai casualmente un campione di file
         List<File> sampleFiles = FileUtil.getRandomSampleFromDirectory(directoryPath, sampleSize);
@@ -19,9 +19,9 @@ public class Main {
             System.out.println("File selezionato: " + file.getName());
 
             // Usa la classe DynamicXPath per trovare la migliore espressione XPath per poi estrarre il valore
-            String bestXPath = DynamicXPath.findBestXPath(file.getAbsolutePath(), "pmc");
+            String bestXPath = DynamicXPath.findBestXPath(file.toURI(), "pmc");
             System.out.println("Migliore XPath: " + bestXPath);
-            System.out.println("Valore estratto: " + DynamicXPath.extractValue(file.getAbsolutePath(), bestXPath));
+            System.out.println("Valore estratto: " + DynamicXPath.extractValue(file.toURI(), bestXPath));
             System.out.println();
         }
     }
