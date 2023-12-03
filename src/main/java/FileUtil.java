@@ -28,7 +28,7 @@ public class FileUtil {
         
         for (File file: fileList) {
         	// I "parsing files" non devono far parte del campione
-        	if (file.getName().contains(".xml"))		
+        	if (file.getName().contains(".xml") && file.getName().contains("PMC"))		
         		files.add(file);
         }
         
