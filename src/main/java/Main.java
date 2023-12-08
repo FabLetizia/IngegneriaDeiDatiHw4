@@ -1,22 +1,29 @@
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.NotDirectoryException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Main {
-	private static final int SAMPLE_SIZE = 10;
+	private static final int SAMPLE_SIZE = 100;
 	private static final Logger logger = LoggerFactory.getLogger(Main.class);
-
 
 	/* Lanciare il Programma passando i seguenti parametri al main(): 
 	 * [-xmlfiles XML_DIRECTORY] -> Path della Directory in cui ci sono i documenti .xml e i "parsing files"
+	 * [-logdir LOG_DIRECTORY] -> Path della Directory in cui vengono scritti i file "log.txt"
 	 */
 	public static void main(String[] args) throws Exception {
 		// Benchmark XPath extraction
+		String logFilePath = null;
 		String directoryPath = null;
 
 		for (int i=0; i < args.length; i++) {
@@ -31,45 +38,71 @@ public class Main {
 				else
 					throw new NotDirectoryException("La Directory '" + docsDir.toAbsolutePath() + "' non esiste oppure non è accessibile in lettura");
 			
+			case "-logdir":
+				logFilePath = args[++i];
+				final Path logDir = Paths.get(logFilePath);
+				boolean usableLogDir = Files.isReadable(logDir);
+				
+				if (usableLogDir)
+					break;
+				else
+					throw new NotDirectoryException("La Directory '" + logDir.toAbsolutePath() + "' non esiste oppure non è accessibile in lettura");
+				
 			default:
 				throw new IllegalArgumentException("Parametro Sconosciuto " + args[i]);
 			}
 		}
-
-		benchmarkXPathExtraction(directoryPath);
+		
+		benchmarkXPathExtraction(directoryPath, logFilePath);
 
 		// Generate JSON files
 		//generateJsonFiles();
 	}
 
-	private static void benchmarkXPathExtraction(String directoryPath) throws Exception {
-		BaseXPathFinder dynamicXPath = new ArticleIdXPathFinder();
-
+	private static void benchmarkXPathExtraction(String directoryPath, String logFilePath) throws Exception {
 		// Extract a random sample of files
 		List<File> sampleFiles = FileUtil.getRandomSampleFromDirectory(directoryPath, SAMPLE_SIZE);
+		
+		Map<BaseXPathFinder, String> benchmark2log = new HashMap<>();
+		
+		BaseXPathFinder dynamicXPathArticleId = new ArticleIdXPathFinder();
+		benchmark2log.put(dynamicXPathArticleId, logFilePath+"/logID.txt");
+		
+//		BaseXPathFinder dynamicXPathKeywords = new KeywordsXPathFinder();
+//		benchmark2log.put(dynamicXPathKeywords, logFilePath+"/logKeywords.txt");
+		
 
 		// For each file in the sample, find the best XPath expression and print the result
-		for (File file : sampleFiles) {
-			logger.info(file.getName());
-			System.out.println("File selected: " + file.getName());
-			String fileURI = file.toURI().toASCIIString();
+		for (BaseXPathFinder xPathFinder: benchmark2log.keySet()) {
+			String specificLogPath = benchmark2log.get(xPathFinder);
+			
+			for (File file : sampleFiles) {
+				logger.info(file.getName());
+				Files.write(Paths.get(specificLogPath), String.format("File: %s\n", file.getName()).getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND);
+				// System.out.println("File selected: " + file.getName());
+				String fileURI = file.toURI().toASCIIString();
 
-			String bestXPath = dynamicXPath.findBestXPath(fileURI, "pmc");
-			logger.info("Best XPath: {}", bestXPath);
-			logger.info("Extracted Value: {}", dynamicXPath.extractValue(fileURI, bestXPath));
-			logger.info("");
-			System.out.println("Best XPath: " + bestXPath);
-			System.out.println("Extracted Value: " + dynamicXPath.extractValue(fileURI, bestXPath));
-			System.out.println();
-			saveLogToFile(file.getName(), bestXPath, dynamicXPath.extractValue(fileURI, bestXPath));
+				dynamicXPathArticleId.findBestXPath(fileURI, "pmc", logger, specificLogPath);
 
+				Files.write(Paths.get(specificLogPath), String.format("\n").getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND);
+			}
+			
+			Files.write(Paths.get(specificLogPath), String.format("----------\nRisultati per %s\n", xPathFinder.toString()).getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND);
+			
+			Map<String, Integer> results = xPathFinder.getOrderedResults();
+			for (Map.Entry<String, Integer> entry: results.entrySet()) {
+				String expression = entry.getKey();
+				Integer score = entry.getValue();
+				Files.write(Paths.get(specificLogPath), String.format("XPath: %s -> Score = %d\n", expression, score).getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND);
+			}
 		}
+		
 	}
-	private static void saveLogToFile(String fileName, String bestXPath, String extractedValue) {
+	
+	private static void saveLogToFile(String fileName, String bestXPath, Integer score, String extractedValue, String logFilePath) {
 		// Implementa il salvataggio delle informazioni su file
-		String logFilePath = "/Users/alessandropesare/log/log.txt";
 		try {
-			Files.write(Paths.get(logFilePath), String.format("File: %s, Best XPath: %s, Extracted Value: %s%n", fileName, bestXPath, extractedValue).getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND);
+			Files.write(Paths.get(logFilePath), String.format("File: %s, Best XPath: %s, Score: %d, Extracted Value: %s%n", fileName, bestXPath, score, extractedValue).getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND);
 		} catch (IOException e) {
 			logger.error("Errore durante il salvataggio del log su file", e);
 		}
