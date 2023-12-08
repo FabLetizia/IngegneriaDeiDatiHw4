@@ -20,7 +20,7 @@ public class ArticleIdXPathFinder extends BaseXPathFinder{
     Ricerca della migliore xpath per l'estrazione dell'article id
 	 */
 	@Override
-	public void findBestXPath(String xmlFile, String pubIdType, Logger logger, String logFilePath) throws Exception {
+	public void findBestXPath(String xmlFile, Logger logger, String logFilePath) throws Exception {
 
 		Document document = this.loadXmlDocument(xmlFile);
 		//Crea un'istanza di XPath
@@ -28,7 +28,7 @@ public class ArticleIdXPathFinder extends BaseXPathFinder{
 		XPath xpath = xPathFactory.newXPath();
 
 		// Prova diverse espressioni XPath dinamiche
-		for (String dynamicXPath : this.generateDynamicXPaths(pubIdType)) {
+		for (String dynamicXPath : this.generateDynamicXPaths()) {
 
 			// New
 			if (this.expression2score.containsKey(dynamicXPath) == false)
@@ -69,12 +69,10 @@ public class ArticleIdXPathFinder extends BaseXPathFinder{
     Generazione delle espressioni xpath candidate
 	 */
 	@Override
-	public List<String> generateDynamicXPaths(String pubIdType) {
+	public List<String> generateDynamicXPaths() {
 		// Implementa la logica per generare espressioni XPath dinamiche basate sul tuo caso specifico
 		List<String> xpaths = new ArrayList<>();
-		xpaths.add("//article-meta/article-id[@pub-id-type='" + pubIdType + "']");
-		//xpaths.add("//kwd");
-		//xpaths.add("//id");
+		xpaths.add("//article-meta/article-id[@pub-id-type='pmc']");
 		// Aggiungi altre espressioni XPath secondo necessità
 		return xpaths;
 	}

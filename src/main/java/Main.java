@@ -68,8 +68,8 @@ public class Main {
 		BaseXPathFinder dynamicXPathArticleId = new ArticleIdXPathFinder();
 		benchmark2log.put(dynamicXPathArticleId, logFilePath+"/logID.txt");
 		
-//		BaseXPathFinder dynamicXPathKeywords = new KeywordsXPathFinder();
-//		benchmark2log.put(dynamicXPathKeywords, logFilePath+"/logKeywords.txt");
+		BaseXPathFinder dynamicXPathKeywords = new KeywordsXPathFinder();
+		benchmark2log.put(dynamicXPathKeywords, logFilePath+"/logKeywords.txt");
 		
 
 		// For each file in the sample, find the best XPath expression and print the result
@@ -82,7 +82,7 @@ public class Main {
 				// System.out.println("File selected: " + file.getName());
 				String fileURI = file.toURI().toASCIIString();
 
-				dynamicXPathArticleId.findBestXPath(fileURI, "pmc", logger, specificLogPath);
+				xPathFinder.findBestXPath(fileURI, logger, specificLogPath);
 
 				Files.write(Paths.get(specificLogPath), String.format("\n").getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND);
 			}

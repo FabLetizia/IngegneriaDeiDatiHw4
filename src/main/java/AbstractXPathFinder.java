@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 
 public class AbstractXPathFinder extends BaseXPathFinder{
     @Override
-    public List<String> generateDynamicXPaths(String param) {
+    public List<String> generateDynamicXPaths() {
         return null;
     }
 
@@ -14,6 +14,6 @@ public class AbstractXPathFinder extends BaseXPathFinder{
     }
 
     @Override
-    public void findBestXPath(String xmlFile, String pubIdType, Logger logger, String logFilePath) throws Exception {
+    public void findBestXPath(String xmlFile, Logger logger, String logFilePath) throws Exception {
     }
 }

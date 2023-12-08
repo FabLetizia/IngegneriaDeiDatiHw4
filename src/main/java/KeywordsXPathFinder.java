@@ -1,3 +1,8 @@
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,7 +19,7 @@ import org.w3c.dom.NodeList;
 
 public class KeywordsXPathFinder extends BaseXPathFinder{
 	@Override
-	public List<String> generateDynamicXPaths(String param) {
+	public List<String> generateDynamicXPaths() {
 		List<String> xpaths = new ArrayList<>();
 		xpaths.add("//kwd-group/kwd");
 		xpaths.add("//kwd");
@@ -31,47 +36,51 @@ public class KeywordsXPathFinder extends BaseXPathFinder{
 	}
 
 	@Override
-	public void findBestXPath(String xmlFile, String pubIdType, Logger logger, String logFilePath) throws Exception {
+	public void findBestXPath(String xmlFile, Logger logger, String logFilePath) throws Exception {
 		Document document = this.loadXmlDocument(xmlFile);
 		//Crea un'istanza di XPath
 		XPathFactory xPathFactory = XPathFactory.newInstance();
 		XPath xpath = xPathFactory.newXPath();
-
-		// XPath migliore e valore massimo di corrispondenza
-		String bestXPath = null;
-		int maxMatchCount = 0;
-			
-		Map<String, Integer> expr2score = new HashMap<>();
-
-		// Da aggiungere una mappa (?)
-		
+	
 		// Prova diverse espressioni XPath dinamiche
-		for (String dynamicXPath : this.generateDynamicXPaths(pubIdType)){
+		for (String dynamicXPath : this.generateDynamicXPaths()){
+			
+			if (this.expression2score.containsKey(dynamicXPath) == false)
+				this.expression2score.put(dynamicXPath, 0);
+			
 			// Compila l'espressione XPath
 			XPathExpression expr = xpath.compile(dynamicXPath);
-
-			// Esegui la query XPath sul documento
-			//            Node articleIdNode = (Node) expr.evaluate(document, XPathConstants.NODE);
-			
 			
 			NodeList keywordList = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+			List<String> extractedContent = new ArrayList<>();
 			
-			
-			
-//			for (int i = 0; i < nodeList.getLength(); i++) {
-//				Node node = nodeList.item(i);
-//				String extractedTag = serializeNodeToString(node);
-//				System.out.println(extractedTag);
-//			}
-//
-//			// Calcola il numero di corrispondenze
-//			int matchCount = (articleIdNode != null) ? 1 : 0;
-//
-//			// Aggiorna se questa espressione è migliore della precedente
-//			if (matchCount > maxMatchCount) {
-//				maxMatchCount = matchCount;
-//				bestXPath = dynamicXPath;
-//			}
+			if (keywordList != null) {
+				for (int i = 0; i < keywordList.getLength(); i++) {
+					extractedContent.add(keywordList.item(i).getTextContent());
+				}
+				
+				if (extractedContent.size() == keywordList.getLength()) {
+					Integer value = this.expression2score.get(dynamicXPath);
+					this.expression2score.put(dynamicXPath, value+1);
+				}
+				
+				logger.info("XPath: {}", dynamicXPath);
+				logger.info("Extracted Value: {}", extractedContent.toString());
+				saveLogToFile(logger, dynamicXPath, extractedContent.toString(), logFilePath);
+			}
 		}
+	}
+	
+	private void saveLogToFile(Logger logger, String dynamicXPath, String extractedContent, String logFilePath) {
+		try {
+			Files.write(Paths.get(logFilePath), String.format("XPath: %s, Extracted Value: %s\n", dynamicXPath, extractedContent).getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND);
+		} catch (IOException e) {
+			logger.error("Errore durante il salvataggio del log su file", e);
+		}
+	}
+	
+	@Override
+	public String toString() {
+		return "KeywordXPathFinder";
 	}
 }

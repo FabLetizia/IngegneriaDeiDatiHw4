@@ -20,11 +20,11 @@ public abstract class BaseXPathFinder implements XPathFinder{
         DocumentBuilder builder = factory.newDocumentBuilder();
         return builder.parse(xmlFile);
     }
-    public abstract List<String> generateDynamicXPaths(String param);
+    public abstract List<String> generateDynamicXPaths();
 
     public abstract String extractValue(String xmlFile, String xpath) throws Exception;
 
-    public abstract void findBestXPath(String xmlFile,String pubIdType, Logger logger, String logFilePath) throws Exception;
+    public abstract void findBestXPath(String xmlFile, Logger logger, String logFilePath) throws Exception;
     
     public Map<String, Integer> getOrderedResults() {
     	List<Map.Entry<String, Integer>> entryList = new ArrayList<>(this.expression2score.entrySet());
