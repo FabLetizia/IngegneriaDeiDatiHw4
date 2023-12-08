@@ -1,12 +1,16 @@
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.NotDirectoryException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
 import java.util.List;
 
 public class Main {
-	private static final int SAMPLE_SIZE = 1000;
+	private static final int SAMPLE_SIZE = 10;
+	private static final Logger logger = LoggerFactory.getLogger(Main.class);
+
 
 	/* Lanciare il Programma passando i seguenti parametri al main(): 
 	 * [-xmlfiles XML_DIRECTORY] -> Path della Directory in cui ci sono i documenti .xml e i "parsing files"
@@ -46,13 +50,28 @@ public class Main {
 
 		// For each file in the sample, find the best XPath expression and print the result
 		for (File file : sampleFiles) {
+			logger.info(file.getName());
 			System.out.println("File selected: " + file.getName());
 			String fileURI = file.toURI().toASCIIString();
 
 			String bestXPath = dynamicXPath.findBestXPath(fileURI, "pmc");
+			logger.info("Best XPath: {}", bestXPath);
+			logger.info("Extracted Value: {}", dynamicXPath.extractValue(fileURI, bestXPath));
+			logger.info("");
 			System.out.println("Best XPath: " + bestXPath);
 			System.out.println("Extracted Value: " + dynamicXPath.extractValue(fileURI, bestXPath));
 			System.out.println();
+			saveLogToFile(file.getName(), bestXPath, dynamicXPath.extractValue(fileURI, bestXPath));
+
+		}
+	}
+	private static void saveLogToFile(String fileName, String bestXPath, String extractedValue) {
+		// Implementa il salvataggio delle informazioni su file
+		String logFilePath = "/Users/alessandropesare/log/log.txt";
+		try {
+			Files.write(Paths.get(logFilePath), String.format("File: %s, Best XPath: %s, Extracted Value: %s%n", fileName, bestXPath, extractedValue).getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND);
+		} catch (IOException e) {
+			logger.error("Errore durante il salvataggio del log su file", e);
 		}
 	}
 

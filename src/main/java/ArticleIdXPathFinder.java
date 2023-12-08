@@ -22,7 +22,8 @@ public class ArticleIdXPathFinder extends BaseXPathFinder{
 
         // XPath migliore e valore massimo di corrispondenza
         String bestXPath = null;
-        int maxMatchCount = 0;
+        // se tutte gli article-id fossero vuoti il miglior punteggio è 0 (se la xpath funziona)
+        int maxMatchCount = -1;
 
         // Prova diverse espressioni XPath dinamiche
         for (String dynamicXPath : this.generateDynamicXPaths(pubIdType)){
@@ -31,10 +32,12 @@ public class ArticleIdXPathFinder extends BaseXPathFinder{
 
             // Esegui la query XPath sul documento
             Node articleIdNode = (Node) expr.evaluate(document, XPathConstants.NODE);
-
-            // Calcola il numero di corrispondenze
-            int matchCount = (articleIdNode != null) ? 1 : 0;
-
+            int matchCount = 0;
+            if(articleIdNode!=null){
+                if(articleIdNode.getTextContent().length()>3 && articleIdNode.getTextContent().startsWith("PMC")){
+                    matchCount++;
+                }
+            }
             // Aggiorna se questa espressione è migliore della precedente
             if (matchCount > maxMatchCount) {
                 maxMatchCount = matchCount;

@@ -13,6 +13,7 @@ public class TitleXPathFinder extends BaseXPathFinder{
 
     @Override
     public String findBestXPath(String xmlFile, String pubIdType) throws Exception {
+
         return null;
     }
 }
