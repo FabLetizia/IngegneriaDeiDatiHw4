@@ -23,7 +23,10 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class FigureXPathFinder extends BaseXPathFinder{
-
+	private int figureNumber = 0;
+	private int captionNumber = 0;
+	private int sourceNumber = 0;
+	
 	@Override
 	public List<String> generateDynamicXPaths() {
 		List<String> xpaths = new ArrayList<>();
@@ -49,6 +52,7 @@ public class FigureXPathFinder extends BaseXPathFinder{
 		//Crea un'istanza di XPath
 		XPathFactory xPathFactory = XPathFactory.newInstance();
 		XPath xpath = xPathFactory.newXPath();
+		
 
 		// Prova diverse espressioni XPath dinamiche
 		for (String dynamicXPath : this.generateDynamicXPaths()) {
@@ -68,7 +72,9 @@ public class FigureXPathFinder extends BaseXPathFinder{
 				Node node = figureNodes.item(i);
 				if(node!=null){
 					extractedContent += node.getTextContent() + " ";
+					this.figureNumber++;
 					this.extractCaption(logger, logFilePath, node.getTextContent(), document);
+					this.extractSource(logger, logFilePath, node.getTextContent(), document);
 				}
 			}
 			
@@ -128,12 +134,16 @@ public class FigureXPathFinder extends BaseXPathFinder{
 		XPathFactory xPathFactory = XPathFactory.newInstance();
 		XPath xpath = xPathFactory.newXPath();
 		
-		String xpathExpression = "//fig[@id='" + figureId + "']/caption/p";
+		String xpathExpression = "//fig[@id='" + figureId + "']/caption/p | //fig[@id='" + figureId + "']/caption/title ";
 		XPathExpression expr = xpath.compile(xpathExpression);
 		NodeList captionNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
 		String extractedContent = "";
 		String extractedContentNode = "";
-
+		
+		if(captionNodes.getLength()>0) {
+			this.captionNumber++;
+		}
+		
 		for(int i = 0; i<captionNodes.getLength(); i++) {
 			Node node = captionNodes.item(i);
 			if(node!=null){
@@ -142,27 +152,39 @@ public class FigureXPathFinder extends BaseXPathFinder{
 			}
 		}
 		
+		
 		logger.info("XPath: {}", xpathExpression);
 		logger.info("Extracted Value: {}", extractedContent);
 		saveLogToFile(logger, xpathExpression, extractedContent, logFilePath);	
 
 	}
+
+	public int getFigureNumber() {
+		return figureNumber;
+	}
+
+	public int getCaptionNumber() {
+		return captionNumber;
+	}
+
 	
 	private void extractSource(Logger logger, String logFilePath, String figureId, Document document) throws XPathExpressionException {
 		XPathFactory xPathFactory = XPathFactory.newInstance();
 		XPath xpath = xPathFactory.newXPath();
 		
-		String xpathExpression = "//fig[@id='" + figureId + "']/caption/p";
+		String xpathExpression = "//fig[@id='"+ figureId +"']/graphic/@*[local-name()='href']";
 		XPathExpression expr = xpath.compile(xpathExpression);
-		NodeList captionNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+		NodeList sourceNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
 		String extractedContent = "";
-		String extractedContentNode = "";
-
-		for(int i = 0; i<captionNodes.getLength(); i++) {
-			Node node = captionNodes.item(i);
-			if(node!=null){
-				extractedContentNode = this.serializeNodeToString(node);
-				extractedContent += extractedContentNode.replaceAll("<\\?xml.*\\?>", "");
+		
+		if(sourceNodes.getLength()>0) {
+			this.sourceNumber++;
+		}
+		
+		for(int i = 0; i<sourceNodes.getLength(); i++) {
+			Node node = sourceNodes.item(i);
+			if(node!=null){ 
+				extractedContent += node.getTextContent() + " ";
 			}
 		}
 		
@@ -171,4 +193,9 @@ public class FigureXPathFinder extends BaseXPathFinder{
 		saveLogToFile(logger, xpathExpression, extractedContent, logFilePath);	
 
 	}
+
+	public int getSourceNumber() {
+		return sourceNumber;
+	}
+
 }
