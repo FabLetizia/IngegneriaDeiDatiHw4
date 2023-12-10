@@ -26,6 +26,8 @@ public class FigureXPathFinder extends BaseXPathFinder{
 	private int figureNumber = 0;
 	private int captionNumber = 0;
 	private int sourceNumber = 0;
+	private int citationsNumber = 0;
+	private int paragraphsNumber = 0;
 	
 	@Override
 	public List<String> generateDynamicXPaths() {
@@ -73,10 +75,13 @@ public class FigureXPathFinder extends BaseXPathFinder{
 				if(node!=null){
 					extractedContent += node.getTextContent() + " ";
 					this.figureNumber++;
-					this.extractCaption(logger, logFilePath, node.getTextContent(), document);
-					this.extractSource(logger, logFilePath, node.getTextContent(), document);
+//					this.extractCaption(logger, logFilePath, node.getTextContent(), document);
+//					this.extractSource(logger, logFilePath, node.getTextContent(), document);
+					this.extractCitations(logger, logFilePath, node.getTextContent(), document);
+					this.extractBibrCitation(logger, logFilePath, node.getTextContent(), document);
 				}
 			}
+			
 			
 
 			//				if(extractedContent.startsWith("<p>")){
@@ -159,14 +164,6 @@ public class FigureXPathFinder extends BaseXPathFinder{
 
 	}
 
-	public int getFigureNumber() {
-		return figureNumber;
-	}
-
-	public int getCaptionNumber() {
-		return captionNumber;
-	}
-
 	
 	private void extractSource(Logger logger, String logFilePath, String figureId, Document document) throws XPathExpressionException {
 		XPathFactory xPathFactory = XPathFactory.newInstance();
@@ -194,8 +191,78 @@ public class FigureXPathFinder extends BaseXPathFinder{
 
 	}
 
+	
+	private void extractCitations(Logger logger, String logFilePath, String figureId, Document document) throws XPathExpressionException {
+		XPathFactory xPathFactory = XPathFactory.newInstance();
+		XPath xpath = xPathFactory.newXPath();
+		
+		String xpathExpression = "//xref[@ref-type='fig' and @rid='" + figureId + "']/..";
+//		String xpathExpression = "//p[xref[@ref-type='fig' and @rid='"+ figureId + "']]";
+		XPathExpression expr = xpath.compile(xpathExpression);
+		NodeList citationsNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+		String extractedContent = "";
+		String extractedContentNode = "";
+		
+		for(int i = 0; i<citationsNodes.getLength(); i++) {
+			Node node = citationsNodes.item(i);
+			if(node!=null){ 
+				this.citationsNumber++;
+				extractedContentNode = this.serializeNodeToString(node);
+				extractedContentNode = extractedContentNode.replaceAll("<\\?xml.*\\?>", "");
+				if(extractedContentNode.startsWith("<p")) {
+					this.paragraphsNumber++;
+				}
+				extractedContent += extractedContentNode + "\n"; 
+			}
+		}
+		
+		logger.info("XPath: {}", xpathExpression);
+		logger.info("Extracted Value: {}", extractedContent);
+		saveLogToFile(logger, xpathExpression, extractedContent, logFilePath);	
+	}
+	
+	private void extractBibrCitation(Logger logger, String logFilePath, String figureId, Document document) throws XPathExpressionException {
+		XPathFactory xPathFactory = XPathFactory.newInstance();
+		XPath xpath = xPathFactory.newXPath();
+		
+		String xpathExpression = "//xref[@ref-type='fig' and @rid='"+ figureId + "']/../xref[@ref-type='bibr']/@rid";
+//		String xpathExpression = "//p[xref[@ref-type='fig' and @rid='"+ figureId + "']]";
+		XPathExpression expr = xpath.compile(xpathExpression);
+		NodeList bibrCitationsNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+		String extractedContent = "";
+		
+		for(int i = 0; i<bibrCitationsNodes.getLength(); i++) {
+			Node node = bibrCitationsNodes.item(i);
+			if(node!=null){ 
+				extractedContent += node.getTextContent() + " "; 
+			}
+		}
+		
+		logger.info("XPath: {}", xpathExpression);
+		logger.info("Extracted Value: {}", extractedContent);
+		saveLogToFile(logger, xpathExpression, extractedContent, logFilePath);	
+	}
+	
+	public int getFigureNumber() {
+		return figureNumber;
+	}
+
+	public int getCaptionNumber() {
+		return captionNumber;
+	}
+	
 	public int getSourceNumber() {
 		return sourceNumber;
 	}
+
+	public int getCitationsNumber() {
+		return citationsNumber;
+	}
+
+
+	public int getParagraphsNumber() {
+		return paragraphsNumber;
+	}
+
 
 }
