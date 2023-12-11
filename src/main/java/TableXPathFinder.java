@@ -23,10 +23,12 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class TableXPathFinder extends BaseXPathFinder{
-	
+
 	private int tableNumber = 0;
 	private int bodyNumber = 0;
-	
+	private int captionNumber = 0; 
+	private int footsNumber = 0;
+
 	public int getTableNumber() {
 		return tableNumber;
 	}
@@ -43,7 +45,22 @@ public class TableXPathFinder extends BaseXPathFinder{
 		this.bodyNumber = bodyNumber;
 	}
 	
-	
+	public int getCaptionNumber() {
+		return captionNumber;
+	}
+
+	public void setCaptionNumber(int captionNumber) {
+		this.captionNumber = captionNumber;
+	}
+
+	public int getFootsNumber() {
+		return footsNumber;
+	}
+
+	public void setFootsNumber(int footsNumber) {
+		this.footsNumber = footsNumber;
+	}
+
 	/*
     Ricerca della migliore xpath per l'estrazione delle table id
 	 */
@@ -73,8 +90,9 @@ public class TableXPathFinder extends BaseXPathFinder{
 				for(int i =0; i<tableIdList.getLength(); i++) {
 					this.tableNumber++;
 					extractedContent += tableIdList.item(i).getTextContent()+" ";
-					this.extractBody(logger, logFilePath, tableIdList.item(i).getTextContent(), document);
-
+//					this.extractBody(logger, logFilePath, tableIdList.item(i).getTextContent(), document);
+//					this.extractCaption(logger, logFilePath, tableIdList.item(i).getTextContent(), document);
+					this.extractFoots(logger, logFilePath, tableIdList.item(i).getTextContent(), document);
 				}
 
 				if(extractedContent.contains(" ") && (extractedContent.contains("t") || extractedContent.contains("T"))){
@@ -121,7 +139,7 @@ public class TableXPathFinder extends BaseXPathFinder{
 		XPath expr = xPathFactory.newXPath();
 		return expr.evaluate(xpath, document);
 	}
-	
+
 	private void extractBody(Logger logger, String logFilePath, String tableId, Document document) throws XPathExpressionException {
 		XPathFactory xPathFactory = XPathFactory.newInstance();
 		XPath xpath = xPathFactory.newXPath();
@@ -131,7 +149,6 @@ public class TableXPathFinder extends BaseXPathFinder{
 		NodeList bodyNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
 		String extractedContent = "";
 		String extractedContentNode = "";
-		
 		
 		for(int i = 0; i<bodyNodes.getLength(); i++) {
 			Node node = bodyNodes.item(i);
@@ -143,39 +160,102 @@ public class TableXPathFinder extends BaseXPathFinder{
 		if(extractedContent.startsWith("<thead") || extractedContent.contains("</tbody>")) {
 			this.bodyNumber++;
 		}
+		
 		logger.info("XPath: {}", xpathExpression);
 		logger.info("Extracted Value: {}", extractedContent);
 		saveLogToFile(logger, xpathExpression, extractedContent, logFilePath);	
 	}
+	
+	
+
+	private void extractCaption(Logger logger, String logFilePath, String tableId, Document document) throws XPathExpressionException {
+		XPathFactory xPathFactory = XPathFactory.newInstance();
+		XPath xpath = xPathFactory.newXPath();
+		//table-wrap[@id='table_id']/table[@frame='hsides' and @rules='groups']/thead | //table-wrap[@id='table_id']/table[@frame='hsides' and @rules='groups']/tbody
+		String xpathExpression = "//table-wrap[@id='" + tableId + "']/caption/p | //table-wrap[@id='" + tableId + "']/caption/title";
+		XPathExpression expr = xpath.compile(xpathExpression);
+		NodeList captionNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+		String extractedContent = "";
+		String extractedContentNode = "";
 		
-		private String serializeNodeToString(Node node) {
-			try {
-				// Usa un Transformer per la serializzazione
-				TransformerFactory transformerFactory = TransformerFactory.newInstance();
-				Transformer transformer = transformerFactory.newTransformer();
-
-				// Configura l'output per indentare la stringa XML
-				transformer.setOutputProperty(javax.xml.transform.OutputKeys.INDENT, "yes");
-
-				// Crea un DOMSource dal nodo
-				DOMSource source = new DOMSource(node);
-
-				// Crea uno StringWriter per la stringa di output
-				StringWriter stringWriter = new StringWriter();
-
-				// Crea un StreamResult per la stringa di output
-				StreamResult result = new StreamResult(stringWriter);
-
-				// Esegue la trasformazione
-				transformer.transform(source, result);
-
-				// Restituisci la stringa risultante
-				return stringWriter.toString();
-			} catch (Exception e) {
-				e.printStackTrace();
-				return null;
+		if(captionNodes.getLength()>0) {
+			this.captionNumber++;
+		}
+		for(int i = 0; i<captionNodes.getLength(); i++) {
+			Node node = captionNodes.item(i);
+			if(node!=null){
+				extractedContentNode = this.serializeNodeToString(node);
+				extractedContent += extractedContentNode.replaceAll("<\\?xml.*\\?>", "");
 			}
 		}
+		
+		logger.info("XPath: {}", xpathExpression);
+		logger.info("Extracted Value: {}", extractedContent);
+		saveLogToFile(logger, xpathExpression, extractedContent, logFilePath);	
+	}
+	
+	private void extractFoots(Logger logger, String logFilePath, String tableId, Document document) throws XPathExpressionException {
+		XPathFactory xPathFactory = XPathFactory.newInstance();
+		XPath xpath = xPathFactory.newXPath();
+		//table-wrap[@id='table_id']/table[@frame='hsides' and @rules='groups']/thead | //table-wrap[@id='table_id']/table[@frame='hsides' and @rules='groups']/tbody
+		String xpathExpression = "//table-wrap[@id='" + tableId + "']/table-wrap-foot//p";
+		XPathExpression expr = xpath.compile(xpathExpression);
+		NodeList footsNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+		String extractedContent = "";
+		String extractedContentNode = "";
+		
+		//sui primi 100 articoli, su 414 tabelle totali abbiamo verificato che 274 hanno il foot con xpath //table-wrap[@id='Table_ID']/table-wrap-foot
+		//e abbiamo verificato la stessa cosa con xpath  //table-wrap[@id='Table_ID']/table-wrap-foot//p
+		//quindi anche quando non trova il foot incrementiamo la valutazione del punteggio
+		
+		if(footsNodes.getLength()==0) {
+			this.footsNumber++;
+		}
+		
+		for(int i = 0; i<footsNodes.getLength(); i++) {
+			Node node = footsNodes.item(i);
+			if(node!=null){
+				extractedContentNode = this.serializeNodeToString(node);
+				extractedContent += extractedContentNode.replaceAll("<\\?xml.*\\?>", "");
+			}
+		}
+		if(extractedContent.startsWith("<p")) {
+			this.footsNumber++;
+		}
+		
+		logger.info("XPath: {}", xpathExpression);
+		logger.info("Extracted Value: {}", extractedContent);
+		saveLogToFile(logger, xpathExpression, extractedContent, logFilePath);	
+	}
+
+	private String serializeNodeToString(Node node) {
+		try {
+			// Usa un Transformer per la serializzazione
+			TransformerFactory transformerFactory = TransformerFactory.newInstance();
+			Transformer transformer = transformerFactory.newTransformer();
+
+			// Configura l'output per indentare la stringa XML
+			transformer.setOutputProperty(javax.xml.transform.OutputKeys.INDENT, "yes");
+
+			// Crea un DOMSource dal nodo
+			DOMSource source = new DOMSource(node);
+
+			// Crea uno StringWriter per la stringa di output
+			StringWriter stringWriter = new StringWriter();
+
+			// Crea un StreamResult per la stringa di output
+			StreamResult result = new StreamResult(stringWriter);
+
+			// Esegue la trasformazione
+			transformer.transform(source, result);
+
+			// Restituisci la stringa risultante
+			return stringWriter.toString();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
 
 	@Override
 	public String toString() {
