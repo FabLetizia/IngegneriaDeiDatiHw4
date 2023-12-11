@@ -77,7 +77,7 @@ public class FigureXPathFinder extends BaseXPathFinder{
 					this.figureNumber++;
 //					this.extractCaption(logger, logFilePath, node.getTextContent(), document);
 //					this.extractSource(logger, logFilePath, node.getTextContent(), document);
-					this.extractCitations(logger, logFilePath, node.getTextContent(), document);
+					this.extractParagraphs(logger, logFilePath, logFilePath, document);
 					this.extractBibrCitation(logger, logFilePath, node.getTextContent(), document);
 				}
 			}
@@ -192,7 +192,7 @@ public class FigureXPathFinder extends BaseXPathFinder{
 	}
 
 	
-	private void extractCitations(Logger logger, String logFilePath, String figureId, Document document) throws XPathExpressionException {
+	private void extractParagraphs(Logger logger, String logFilePath, String figureId, Document document) throws XPathExpressionException {
 		XPathFactory xPathFactory = XPathFactory.newInstance();
 		XPath xpath = xPathFactory.newXPath();
 		
@@ -242,6 +242,7 @@ public class FigureXPathFinder extends BaseXPathFinder{
 		logger.info("Extracted Value: {}", extractedContent);
 		saveLogToFile(logger, xpathExpression, extractedContent, logFilePath);	
 	}
+	
 	
 	public int getFigureNumber() {
 		return figureNumber;
