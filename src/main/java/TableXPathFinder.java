@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -6,9 +7,14 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import org.slf4j.Logger;
@@ -16,7 +22,28 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-public class TableIdXPathFinder extends BaseXPathFinder{
+public class TableXPathFinder extends BaseXPathFinder{
+	
+	private int tableNumber = 0;
+	private int bodyNumber = 0;
+	
+	public int getTableNumber() {
+		return tableNumber;
+	}
+
+	public void setTableNumber(int tableNumber) {
+		this.tableNumber = tableNumber;
+	}
+
+	public int getBodyNumber() {
+		return bodyNumber;
+	}
+
+	public void setBodyNumber(int bodyNumber) {
+		this.bodyNumber = bodyNumber;
+	}
+	
+	
 	/*
     Ricerca della migliore xpath per l'estrazione delle table id
 	 */
@@ -44,7 +71,10 @@ public class TableIdXPathFinder extends BaseXPathFinder{
 
 			if(tableIdList!=null){
 				for(int i =0; i<tableIdList.getLength(); i++) {
+					this.tableNumber++;
 					extractedContent += tableIdList.item(i).getTextContent()+" ";
+					this.extractBody(logger, logFilePath, tableIdList.item(i).getTextContent(), document);
+
 				}
 
 				if(extractedContent.contains(" ") && (extractedContent.contains("t") || extractedContent.contains("T"))){
@@ -91,6 +121,61 @@ public class TableIdXPathFinder extends BaseXPathFinder{
 		XPath expr = xPathFactory.newXPath();
 		return expr.evaluate(xpath, document);
 	}
+	
+	private void extractBody(Logger logger, String logFilePath, String tableId, Document document) throws XPathExpressionException {
+		XPathFactory xPathFactory = XPathFactory.newInstance();
+		XPath xpath = xPathFactory.newXPath();
+		//table-wrap[@id='table_id']/table[@frame='hsides' and @rules='groups']/thead | //table-wrap[@id='table_id']/table[@frame='hsides' and @rules='groups']/tbody
+		String xpathExpression = "//table-wrap[@id='" + tableId + "']/table/thead | //table-wrap[@id='" + tableId + "']/table/tbody";
+		XPathExpression expr = xpath.compile(xpathExpression);
+		NodeList bodyNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+		String extractedContent = "";
+		String extractedContentNode = "";
+		
+		
+		for(int i = 0; i<bodyNodes.getLength(); i++) {
+			Node node = bodyNodes.item(i);
+			if(node!=null){
+				extractedContentNode = this.serializeNodeToString(node);
+				extractedContent += extractedContentNode.replaceAll("<\\?xml.*\\?>", "");
+			}
+		}
+		if(extractedContent.startsWith("<thead") || extractedContent.contains("</tbody>")) {
+			this.bodyNumber++;
+		}
+		logger.info("XPath: {}", xpathExpression);
+		logger.info("Extracted Value: {}", extractedContent);
+		saveLogToFile(logger, xpathExpression, extractedContent, logFilePath);	
+	}
+		
+		private String serializeNodeToString(Node node) {
+			try {
+				// Usa un Transformer per la serializzazione
+				TransformerFactory transformerFactory = TransformerFactory.newInstance();
+				Transformer transformer = transformerFactory.newTransformer();
+
+				// Configura l'output per indentare la stringa XML
+				transformer.setOutputProperty(javax.xml.transform.OutputKeys.INDENT, "yes");
+
+				// Crea un DOMSource dal nodo
+				DOMSource source = new DOMSource(node);
+
+				// Crea uno StringWriter per la stringa di output
+				StringWriter stringWriter = new StringWriter();
+
+				// Crea un StreamResult per la stringa di output
+				StreamResult result = new StreamResult(stringWriter);
+
+				// Esegue la trasformazione
+				transformer.transform(source, result);
+
+				// Restituisci la stringa risultante
+				return stringWriter.toString();
+			} catch (Exception e) {
+				e.printStackTrace();
+				return null;
+			}
+		}
 
 	@Override
 	public String toString() {
