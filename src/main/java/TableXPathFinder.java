@@ -5,7 +5,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -35,6 +37,7 @@ public class TableXPathFinder extends BaseXPathFinder{
 	private int citationsNumber = 0;
 	private int paragraphsNumber = 0;
 	private int punteggioCitations = 0;
+	private int numberTableWithCells = 0;
 	
 	
 	public int getPunteggioCitations() {
@@ -93,6 +96,15 @@ public class TableXPathFinder extends BaseXPathFinder{
 		this.paragraphsNumber = paragraphsNumber;
 	}
 
+	
+	public int getNumberTableWithCells() {
+		return numberTableWithCells;
+	}
+
+	public void setNumberTableWithCells(int numberTableWithCells) {
+		this.numberTableWithCells = numberTableWithCells;
+	}
+
 	/*
     Ricerca della migliore xpath per l'estrazione delle table id
 	 */
@@ -126,7 +138,7 @@ public class TableXPathFinder extends BaseXPathFinder{
 //					this.extractBody(logger, logFilePath, node.getTextContent(), document);
 //					this.extractCaption(logger, logFilePath, node.getTextContent(), document);
 //					this.extractFoots(logger, logFilePath, node.getTextContent(), document);
-					this.extractTextParagraphs(logger, logFilePath, node.getTextContent(), document);
+//					this.extractTextParagraphs(logger, logFilePath, node.getTextContent(), document);
 					this.extractContentCells(logger, logFilePath, node.getTextContent(), document);
 				}
 
@@ -308,7 +320,6 @@ public class TableXPathFinder extends BaseXPathFinder{
 		XPath xpath = xPathFactory.newXPath();
 		
 		String xpathExpression = "//xref[@ref-type='bibr']/@rid";
-//		String xpathExpression = "//p[xref[@ref-type='fig' and @rid='"+ figureId + "']]";
 		XPathExpression expr = xpath.compile(xpathExpression);
 		NodeList citationsParagraphNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
 		String extractedContent = "";
@@ -338,15 +349,51 @@ public class TableXPathFinder extends BaseXPathFinder{
 		XPath xpath = xPathFactory.newXPath();
 		
 		String xpathExpression = "//table-wrap[@id='" + tableId + "']//td";
-//		String xpathExpression = "//p[xref[@ref-type='fig' and @rid='"+ figureId + "']]";
+		XPathExpression expr = xpath.compile(xpathExpression);
+		NodeList contentCellsNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+		String extractedContent = "\n";
+		Set<String> cellValues = new HashSet<String>();
+		
+		if(contentCellsNodes.getLength()>0) {
+			this.numberTableWithCells++;
+		}
+		
+		for(int i = 0; i<contentCellsNodes.getLength(); i++) {
+			Node node = contentCellsNodes.item(i);
+			if(node!=null){ 
+				cellValues.add(node.getTextContent());
+				extractedContent += node.getTextContent() + "\n"; 
+			}
+		}
+		
+		logger.info("XPath: {}", xpathExpression);
+		logger.info("Extracted Value: {}", extractedContent);
+		saveLogToFile(logger, xpathExpression, extractedContent, logFilePath);
+		
+		for(String value: cellValues) {
+			this.extractCitedInCells(logger, logFilePath, value, document);
+		}
+	}
+	
+	private void extractCitedInCells(Logger logger, String logFilePath, String term, Document document) throws XPathExpressionException {
+		XPathFactory xPathFactory = XPathFactory.newInstance();
+		XPath xpath = xPathFactory.newXPath();
+		
+		//da rivedere
+		term = term.replaceAll("'", "");
+		
+		String xpathExpression = "//p[contains(.,'" + term + "')]";
 		XPathExpression expr = xpath.compile(xpathExpression);
 		NodeList citationsNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
-		String extractedContent = "\n";
+		String extractedContent = "";
+		String extractedContentNode = "";
 		
 		for(int i = 0; i<citationsNodes.getLength(); i++) {
 			Node node = citationsNodes.item(i);
 			if(node!=null){ 
-				extractedContent += node.getTextContent() + "\n"; 
+				extractedContentNode = this.serializeNodeToString(node);
+				extractedContentNode = extractedContentNode.replaceAll("<\\?xml.*\\?>", "");
+				extractedContent += extractedContentNode;
 			}
 		}
 		
