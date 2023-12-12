@@ -77,8 +77,8 @@ public class FigureXPathFinder extends BaseXPathFinder{
 					this.figureNumber++;
 					this.extractCaption(logger, logFilePath, node.getTextContent(), document);
 					this.extractSource(logger, logFilePath, node.getTextContent(), document);
-					this.extractParagraphs(logger, logFilePath, node.getTextContent(), document);
-					this.extractBibrCitation(logger, logFilePath, node.getTextContent(), document);
+					this.extractCitedInParagraphs(logger, logFilePath, node.getTextContent(), document);
+					this.extractCitationsParagraphs(logger, logFilePath, node.getTextContent(), document);
 				}
 			}
 			
@@ -194,8 +194,9 @@ public class FigureXPathFinder extends BaseXPathFinder{
 
 	}
 
+	/* forse questo da rifare */
 	
-	private void extractParagraphs(Logger logger, String logFilePath, String figureId, Document document) throws XPathExpressionException {
+	private void extractCitedInParagraphs(Logger logger, String logFilePath, String figureId, Document document) throws XPathExpressionException {
 		XPathFactory xPathFactory = XPathFactory.newInstance();
 		XPath xpath = xPathFactory.newXPath();
 		
@@ -224,7 +225,7 @@ public class FigureXPathFinder extends BaseXPathFinder{
 		saveLogToFile(logger, xpathExpression, extractedContent, logFilePath);	
 	}
 	
-	private void extractBibrCitation(Logger logger, String logFilePath, String figureId, Document document) throws XPathExpressionException {
+	private void extractCitationsParagraphs(Logger logger, String logFilePath, String figureId, Document document) throws XPathExpressionException {
 		XPathFactory xPathFactory = XPathFactory.newInstance();
 		XPath xpath = xPathFactory.newXPath();
 		
