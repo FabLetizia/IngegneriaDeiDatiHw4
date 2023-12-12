@@ -135,11 +135,12 @@ public class TableXPathFinder extends BaseXPathFinder{
 					Node node = tableIdList.item(i);
 					this.tableNumber++;
 					extractedContent += node.getTextContent()+" ";
-					//					this.extractBody(logger, logFilePath, node.getTextContent(), document);
-					//					this.extractCaption(logger, logFilePath, node.getTextContent(), document);
-					//					this.extractFoots(logger, logFilePath, node.getTextContent(), document);
-					this.extractTextParagraphs(logger, logFilePath, node.getTextContent(), document);
-					//					this.extractContentCells(logger, logFilePath, node.getTextContent(), document);
+//					this.extractBody(logger, logFilePath, node.getTextContent(), document);
+					this.extractCaption(logger, logFilePath, node.getTextContent(), document);
+					this.extractCitationsCaption(logger, logFilePath, node.getTextContent(), document);
+//					this.extractFoots(logger, logFilePath, node.getTextContent(), document);
+//					this.extractTextParagraphs(logger, logFilePath, node.getTextContent(), document);
+//					this.extractContentCells(logger, logFilePath, node.getTextContent(), document);
 				}
 
 				if(extractedContent.contains(" ") && (extractedContent.contains("t") || extractedContent.contains("T"))){
@@ -215,7 +216,7 @@ public class TableXPathFinder extends BaseXPathFinder{
 
 
 
-	private void extractCaption(Logger logger, String logFilePath, String tableId, Document document) throws XPathExpressionException {
+	private void extractCaption(Logger logger, String logFilePath, String tableId, Document document) throws XPathExpressionException, SAXException, IOException, ParserConfigurationException {
 		XPathFactory xPathFactory = XPathFactory.newInstance();
 		XPath xpath = xPathFactory.newXPath();
 		//table-wrap[@id='table_id']/table[@frame='hsides' and @rules='groups']/thead | //table-wrap[@id='table_id']/table[@frame='hsides' and @rules='groups']/tbody
@@ -225,6 +226,7 @@ public class TableXPathFinder extends BaseXPathFinder{
 		NodeList captionNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
 		String extractedContent = "";
 		String extractedContentNode = "";
+		List<String> captions = new ArrayList<String>();
 
 		for(int i = 0; i<captionNodes.getLength(); i++) {
 			Node node = captionNodes.item(i);
@@ -232,6 +234,7 @@ public class TableXPathFinder extends BaseXPathFinder{
 				extractedContentNode = this.serializeNodeToString(node);
 				extractedContentNode = extractedContentNode.replaceAll("<\\?xml.*\\?><caption>", "");
 				extractedContentNode = extractedContentNode.replaceAll("</caption>", "");
+				captions.add(extractedContentNode);
 				extractedContent += extractedContentNode;
 			}
 		}
@@ -239,6 +242,44 @@ public class TableXPathFinder extends BaseXPathFinder{
 		if(!extractedContent.startsWith("<caption")) {
 			this.captionNumber++;
 		}
+
+		logger.info("XPath: {}", xpathExpression);
+		logger.info("Extracted Value: {}", extractedContent);
+		saveLogToFile(logger, xpathExpression, extractedContent, logFilePath);	
+
+//		for(String caption: captions) {
+//			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+//			DocumentBuilder builder = factory.newDocumentBuilder();
+//			Document captionDocument = builder.parse(new org.xml.sax.InputSource(new java.io.StringReader(caption)));
+//			this.extractCitationsCaption(logger, logFilePath, captionDocument, caption);
+//		}
+
+	}
+
+	private void extractCitationsCaption(Logger logger, String logFilePath,String tableID, Document document) throws XPathExpressionException {
+		XPathFactory xPathFactory = XPathFactory.newInstance();
+		XPath xpath = xPathFactory.newXPath();
+
+		String xpathExpression = "//table-wrap[@id='" + tableID + "']/caption/xref[@ref-type='bibr']/@rid";
+		XPathExpression expr = xpath.compile(xpathExpression);
+		NodeList citationsCaptionNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+		String extractedContent = "";
+		//		int cont = 0;
+
+		for(int i = 0; i<citationsCaptionNodes.getLength(); i++) {
+			Node node = citationsCaptionNodes.item(i);
+			if(node!=null){ 
+				extractedContent += node.getTextContent() + " "; 
+			}
+
+			//			if(textParagraphs.contains(node.getTextContent())) {
+			//				cont++;
+			//			}
+		}
+		// se l'xpath funziona perfetta: punteggioCitations = num paragrafi (citationNumbers)
+		//		if(cont == citationsCaptionNodes.getLength()) {
+		//			this.punteggioCitations++;
+		//		}
 
 		logger.info("XPath: {}", xpathExpression);
 		logger.info("Extracted Value: {}", extractedContent);
