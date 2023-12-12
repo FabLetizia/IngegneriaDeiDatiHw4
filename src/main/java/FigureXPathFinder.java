@@ -75,9 +75,9 @@ public class FigureXPathFinder extends BaseXPathFinder{
 				if(node!=null){
 					extractedContent += node.getTextContent() + " ";
 					this.figureNumber++;
-//					this.extractCaption(logger, logFilePath, node.getTextContent(), document);
-//					this.extractSource(logger, logFilePath, node.getTextContent(), document);
-					this.extractParagraphs(logger, logFilePath, logFilePath, document);
+					this.extractCaption(logger, logFilePath, node.getTextContent(), document);
+					this.extractSource(logger, logFilePath, node.getTextContent(), document);
+					this.extractParagraphs(logger, logFilePath, node.getTextContent(), document);
 					this.extractBibrCitation(logger, logFilePath, node.getTextContent(), document);
 				}
 			}
@@ -139,7 +139,8 @@ public class FigureXPathFinder extends BaseXPathFinder{
 		XPathFactory xPathFactory = XPathFactory.newInstance();
 		XPath xpath = xPathFactory.newXPath();
 		
-		String xpathExpression = "//fig[@id='" + figureId + "']/caption/p | //fig[@id='" + figureId + "']/caption/title ";
+//		String xpathExpression = "//fig[@id='" + figureId + "']/caption/p | //fig[@id='" + figureId + "']/caption/title ";
+		String xpathExpression = "//fig[@id='" + figureId + "']/caption";
 		XPathExpression expr = xpath.compile(xpathExpression);
 		NodeList captionNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
 		String extractedContent = "";
@@ -153,7 +154,9 @@ public class FigureXPathFinder extends BaseXPathFinder{
 			Node node = captionNodes.item(i);
 			if(node!=null){
 				extractedContentNode = this.serializeNodeToString(node);
-				extractedContent += extractedContentNode.replaceAll("<\\?xml.*\\?>", "");
+				extractedContentNode = extractedContentNode.replaceAll("<\\?xml.*\\?><caption>", "");
+				extractedContentNode = extractedContentNode.replaceAll("</caption>", "");				
+				extractedContent += extractedContentNode;
 			}
 		}
 		

@@ -27,7 +27,8 @@ public class AbstractXPathFinder extends BaseXPathFinder{
 	public List<String> generateDynamicXPaths() {
 		// Implementa la logica per generare espressioni XPath dinamiche basate sul tuo caso specifico
 		List<String> xpaths = new ArrayList<>();
-		xpaths.add("//abstract/p | //abstract/sec");
+//		xpaths.add("//abstract/p | //abstract/sec");
+		xpaths.add("//abstract");
 
 		//xpaths.add("//id");
 		// Aggiungi altre espressioni XPath secondo necessità
@@ -69,7 +70,13 @@ public class AbstractXPathFinder extends BaseXPathFinder{
 				Node node = abstractNodes.item(i);
 				if(node!=null){
 					extractedContentNode = this.serializeNodeToString(node);
-					extractedContent += extractedContentNode.replaceAll("<\\?xml.*\\?>", "");
+					extractedContentNode = extractedContentNode.replaceAll("<\\?xml.*\\?>", "");
+					extractedContentNode = extractedContentNode.replaceAll("<abstract[^>]*>", "");
+					extractedContentNode = extractedContentNode.replaceAll("</abstract>", "");
+					extractedContent += extractedContentNode;
+					
+					Integer value = this.expression2score.get(dynamicXPath);
+					this.expression2score.put(dynamicXPath, value+1);
 				}
 			}
 
@@ -79,8 +86,7 @@ public class AbstractXPathFinder extends BaseXPathFinder{
 			//					this.expression2score.put(dynamicXPath, value+1);
 			//				}
 
-			Integer value = this.expression2score.get(dynamicXPath);
-			this.expression2score.put(dynamicXPath, value+1);
+			
 
 			logger.info("XPath: {}", dynamicXPath);
 			logger.info("Extracted Value: {}", extractedContent);
