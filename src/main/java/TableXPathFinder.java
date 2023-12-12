@@ -127,7 +127,7 @@ public class TableXPathFinder extends BaseXPathFinder{
 //					this.extractCaption(logger, logFilePath, node.getTextContent(), document);
 //					this.extractFoots(logger, logFilePath, node.getTextContent(), document);
 					this.extractTextParagraphs(logger, logFilePath, node.getTextContent(), document);
-//					this.extractBibrCitation(logger, logFilePath, node.getTextContent(), document);
+					this.extractContentCells(logger, logFilePath, node.getTextContent(), document);
 				}
 
 				if(extractedContent.contains(" ") && (extractedContent.contains("t") || extractedContent.contains("T"))){
@@ -327,6 +327,28 @@ public class TableXPathFinder extends BaseXPathFinder{
 //		if(cont == bibrCitationsNodes.getLength()) {
 //			this.punteggioCitations++;
 //		}
+		
+		logger.info("XPath: {}", xpathExpression);
+		logger.info("Extracted Value: {}", extractedContent);
+		saveLogToFile(logger, xpathExpression, extractedContent, logFilePath);	
+	}
+	
+	private void extractContentCells(Logger logger, String logFilePath, String tableId, Document document) throws XPathExpressionException {
+		XPathFactory xPathFactory = XPathFactory.newInstance();
+		XPath xpath = xPathFactory.newXPath();
+		
+		String xpathExpression = "//table-wrap[@id='" + tableId + "']//td";
+//		String xpathExpression = "//p[xref[@ref-type='fig' and @rid='"+ figureId + "']]";
+		XPathExpression expr = xpath.compile(xpathExpression);
+		NodeList citationsNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+		String extractedContent = "\n";
+		
+		for(int i = 0; i<citationsNodes.getLength(); i++) {
+			Node node = citationsNodes.item(i);
+			if(node!=null){ 
+				extractedContent += node.getTextContent() + "\n"; 
+			}
+		}
 		
 		logger.info("XPath: {}", xpathExpression);
 		logger.info("Extracted Value: {}", extractedContent);
