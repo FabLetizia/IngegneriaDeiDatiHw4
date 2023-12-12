@@ -7,6 +7,9 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -21,6 +24,7 @@ import org.slf4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 public class TableXPathFinder extends BaseXPathFinder{
 
@@ -30,6 +34,16 @@ public class TableXPathFinder extends BaseXPathFinder{
 	private int footsNumber = 0;
 	private int citationsNumber = 0;
 	private int paragraphsNumber = 0;
+	private int punteggioCitations = 0;
+	
+	
+	public int getPunteggioCitations() {
+		return punteggioCitations;
+	}
+
+	public void setPunteggioCitations(int punteggioCitations) {
+		this.punteggioCitations = punteggioCitations;
+	}
 
 	public int getTableNumber() {
 		return tableNumber;
@@ -110,10 +124,10 @@ public class TableXPathFinder extends BaseXPathFinder{
 					this.tableNumber++;
 					extractedContent += node.getTextContent()+" ";
 //					this.extractBody(logger, logFilePath, node.getTextContent(), document);
-					this.extractCaption(logger, logFilePath, node.getTextContent(), document);
+//					this.extractCaption(logger, logFilePath, node.getTextContent(), document);
 //					this.extractFoots(logger, logFilePath, node.getTextContent(), document);
-					this.extractParagraphs(logger, logFilePath, node.getTextContent(), document);
-					this.extractBibrCitation(logger, logFilePath, node.getTextContent(), document);
+					this.extractTextParagraphs(logger, logFilePath, node.getTextContent(), document);
+//					this.extractBibrCitation(logger, logFilePath, node.getTextContent(), document);
 				}
 
 				if(extractedContent.contains(" ") && (extractedContent.contains("t") || extractedContent.contains("T"))){
@@ -253,19 +267,19 @@ public class TableXPathFinder extends BaseXPathFinder{
 		saveLogToFile(logger, xpathExpression, extractedContent, logFilePath);	
 	}
 	
-	private void extractParagraphs(Logger logger, String logFilePath, String tableId, Document document) throws XPathExpressionException {
+	private void extractTextParagraphs(Logger logger, String logFilePath, String tableId, Document document) throws XPathExpressionException, ParserConfigurationException, SAXException, IOException {
 		XPathFactory xPathFactory = XPathFactory.newInstance();
 		XPath xpath = xPathFactory.newXPath();
 		
 		String xpathExpression = "//xref[@ref-type='table' and @rid='"+ tableId + "']/..";
 //		String xpathExpression = "//p[xref[@ref-type='fig' and @rid='"+ figureId + "']]";
 		XPathExpression expr = xpath.compile(xpathExpression);
-		NodeList citationsNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+		NodeList textParagraphsNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
 		String extractedContent = "";
 		String extractedContentNode = "";
 		
-		for(int i = 0; i<citationsNodes.getLength(); i++) {
-			Node node = citationsNodes.item(i);
+		for(int i = 0; i<textParagraphsNodes.getLength(); i++) {
+			Node node = textParagraphsNodes.item(i);
 			if(node!=null){ 
 				this.citationsNumber++;
 				extractedContentNode = this.serializeNodeToString(node);
@@ -273,31 +287,46 @@ public class TableXPathFinder extends BaseXPathFinder{
 				if(extractedContentNode.startsWith("<p")) {
 					this.paragraphsNumber++;
 				}
-				extractedContent += extractedContentNode + "\n"; 
+				extractedContent += extractedContentNode;
+				DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+				DocumentBuilder builder = factory.newDocumentBuilder();
+				Document paragraphDocument = builder.parse(new org.xml.sax.InputSource(new java.io.StringReader(extractedContentNode)));
+				this.extractCitationsParagraph(logger, logFilePath, tableId, paragraphDocument, extractedContent);
+
 			}
 		}
 		
 		logger.info("XPath: {}", xpathExpression);
 		logger.info("Extracted Value: {}", extractedContent);
-		saveLogToFile(logger, xpathExpression, extractedContent, logFilePath);	
+		saveLogToFile(logger, xpathExpression, extractedContent, logFilePath);
+
+		
 	}
 	
-	private void extractBibrCitation(Logger logger, String logFilePath, String tableId, Document document) throws XPathExpressionException {
+	private void extractCitationsParagraph(Logger logger, String logFilePath, String tableId, Document document, String textParagraphs) throws XPathExpressionException {
 		XPathFactory xPathFactory = XPathFactory.newInstance();
 		XPath xpath = xPathFactory.newXPath();
 		
-		String xpathExpression = "//xref[@ref-type='table' and @rid='"+ tableId + "']/../xref[@ref-type='bibr']/@rid";
+		String xpathExpression = "//xref[@ref-type='bibr']/@rid";
 //		String xpathExpression = "//p[xref[@ref-type='fig' and @rid='"+ figureId + "']]";
 		XPathExpression expr = xpath.compile(xpathExpression);
-		NodeList bibrCitationsNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+		NodeList citationsParagraphNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
 		String extractedContent = "";
+//		int cont = 0;
 		
-		for(int i = 0; i<bibrCitationsNodes.getLength(); i++) {
-			Node node = bibrCitationsNodes.item(i);
+		for(int i = 0; i<citationsParagraphNodes.getLength(); i++) {
+			Node node = citationsParagraphNodes.item(i);
 			if(node!=null){ 
 				extractedContent += node.getTextContent() + " "; 
 			}
+			
+//			if(textParagraphs.contains(node.toString())) {
+//				cont++;
+//			}
 		}
+//		if(cont == bibrCitationsNodes.getLength()) {
+//			this.punteggioCitations++;
+//		}
 		
 		logger.info("XPath: {}", xpathExpression);
 		logger.info("Extracted Value: {}", extractedContent);
