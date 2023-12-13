@@ -80,10 +80,10 @@ public class FigureXPathFinder extends BaseXPathFinder{
 				if(node!=null){
 					extractedContent += node.getTextContent() + " ";
 					this.figureNumber++;
-//					this.extractCaption(logger, logFilePath, node.getTextContent(), document);
+					this.extractCaption(logger, logFilePath, node.getTextContent(), document);
 //					this.extractSource(logger, logFilePath, node.getTextContent(), document);
-					this.extractCitedInParagraphs(logger, logFilePath, node.getTextContent(), document);
-					
+//					this.extractCitedInParagraphs(logger, logFilePath, node.getTextContent(), document);
+					this.extractCitationsCaption(logger, logFilePath, node.getTextContent(), document);
 				}
 			}
 
@@ -163,6 +163,36 @@ public class FigureXPathFinder extends BaseXPathFinder{
 		logger.info("Extracted Value: {}", extractedContent);
 		saveLogToFile(logger, xpathExpression, extractedContent, logFilePath);	
 
+	}
+	
+	private void extractCitationsCaption(Logger logger, String logFilePath,String figureID, Document document) throws XPathExpressionException {
+		XPathFactory xPathFactory = XPathFactory.newInstance();
+		XPath xpath = xPathFactory.newXPath();
+
+		String xpathExpression = "//fig[@id='" + figureID + "']/caption/xref[@ref-type='bibr']/@rid";
+		XPathExpression expr = xpath.compile(xpathExpression);
+		NodeList citationsCaptionNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+		String extractedContent = "";
+		//		int cont = 0;
+
+		for(int i = 0; i<citationsCaptionNodes.getLength(); i++) {
+			Node node = citationsCaptionNodes.item(i);
+			if(node!=null){ 
+				extractedContent += node.getTextContent() + " "; 
+			}
+
+			//			if(textParagraphs.contains(node.getTextContent())) {
+			//				cont++;
+			//			}
+		}
+		// se l'xpath funziona perfetta: punteggioCitations = num paragrafi (citationNumbers)
+		//		if(cont == citationsCaptionNodes.getLength()) {
+		//			this.punteggioCitations++;
+		//		}
+
+		logger.info("XPath: {}", xpathExpression);
+		logger.info("Extracted Value: {}", extractedContent);
+		saveLogToFile(logger, xpathExpression, extractedContent, logFilePath);	
 	}
 
 	
