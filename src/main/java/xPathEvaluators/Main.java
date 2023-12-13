@@ -1,3 +1,4 @@
+package xPathEvaluators;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -65,11 +66,17 @@ public class Main {
 		
 		Map<BaseXPathFinder, String> benchmark2log = new HashMap<>();
 		
-		BaseXPathFinder dynamicXPathArticleId = new ArticleIdXPathFinder();
-		benchmark2log.put(dynamicXPathArticleId, logFilePath+"/logID.txt");
+//		BaseXPathFinder dynamicXPathArticleId = new ArticleIdXPathFinder();
+//		benchmark2log.put(dynamicXPathArticleId, logFilePath+"/logID.txt");
 		
-		BaseXPathFinder dynamicXPathKeywords = new KeywordsXPathFinder();
-		benchmark2log.put(dynamicXPathKeywords, logFilePath+"/logKeywords.txt");
+//		BaseXPathFinder dynamicXPathTitle = new TitleXPathFinder();
+//		benchmark2log.put(dynamicXPathTitle, logFilePath+"/logTitle.txt");
+//		
+//		BaseXPathFinder dynamicXPathKeywords = new KeywordsXPathFinder();
+//		benchmark2log.put(dynamicXPathKeywords, logFilePath+"/logKeywords.txt");
+		
+		BaseXPathFinder dynamicXPathTable = new TableXPathFinder();
+		benchmark2log.put(dynamicXPathTable, logFilePath+"/logTable.txt");
 		
 
 		// For each file in the sample, find the best XPath expression and print the result
@@ -88,7 +95,9 @@ public class Main {
 			}
 			
 			Files.write(Paths.get(specificLogPath), String.format("----------\nRisultati per %s\n", xPathFinder.toString()).getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND);
-			
+			TableXPathFinder tf = (TableXPathFinder) xPathFinder;
+			Files.write(Paths.get(specificLogPath), String.format("Numero paragrafi che citano una tabella: %d, Numero citazioni riuscite (valutazione): %d\n", tf.getCitationsNumber() , tf.getPunteggioCitations()).getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND);
+
 			Map<String, Integer> results = xPathFinder.getOrderedResults();
 			for (Map.Entry<String, Integer> entry: results.entrySet()) {
 				String expression = entry.getKey();
