@@ -7,6 +7,9 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -21,6 +24,7 @@ import org.slf4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 public class FigureXPathFinder extends BaseXPathFinder{
 	private int figureNumber = 0;
@@ -75,19 +79,12 @@ public class FigureXPathFinder extends BaseXPathFinder{
 				if(node!=null){
 					extractedContent += node.getTextContent() + " ";
 					this.figureNumber++;
-					this.extractCaption(logger, logFilePath, node.getTextContent(), document);
-					this.extractSource(logger, logFilePath, node.getTextContent(), document);
+//					this.extractCaption(logger, logFilePath, node.getTextContent(), document);
+//					this.extractSource(logger, logFilePath, node.getTextContent(), document);
 					this.extractCitedInParagraphs(logger, logFilePath, node.getTextContent(), document);
-					this.extractCitationsParagraphs(logger, logFilePath, node.getTextContent(), document);
+					
 				}
 			}
-			
-			
-
-			//				if(extractedContent.startsWith("<p>")){
-			//					Integer value = this.expression2score.get(dynamicXPath);
-			//					this.expression2score.put(dynamicXPath, value+1);
-			//				}
 
 			Integer value = this.expression2score.get(dynamicXPath);
 			this.expression2score.put(dynamicXPath, value+1);
@@ -196,7 +193,7 @@ public class FigureXPathFinder extends BaseXPathFinder{
 
 	/* forse questo da rifare */
 	
-	private void extractCitedInParagraphs(Logger logger, String logFilePath, String figureId, Document document) throws XPathExpressionException {
+	private void extractCitedInParagraphs(Logger logger, String logFilePath, String figureId, Document document) throws XPathExpressionException, SAXException, IOException, ParserConfigurationException {
 		XPathFactory xPathFactory = XPathFactory.newInstance();
 		XPath xpath = xPathFactory.newXPath();
 		
@@ -206,6 +203,7 @@ public class FigureXPathFinder extends BaseXPathFinder{
 		NodeList citationsNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
 		String extractedContent = "";
 		String extractedContentNode = "";
+		List<String> paragraphs = new ArrayList<String>();
 		
 		for(int i = 0; i<citationsNodes.getLength(); i++) {
 			Node node = citationsNodes.item(i);
@@ -213,6 +211,7 @@ public class FigureXPathFinder extends BaseXPathFinder{
 				this.citationsNumber++;
 				extractedContentNode = this.serializeNodeToString(node);
 				extractedContentNode = extractedContentNode.replaceAll("<\\?xml.*\\?>", "");
+				paragraphs.add(extractedContentNode);
 				if(extractedContentNode.startsWith("<p")) {
 					this.paragraphsNumber++;
 				}
@@ -223,20 +222,27 @@ public class FigureXPathFinder extends BaseXPathFinder{
 		logger.info("XPath: {}", xpathExpression);
 		logger.info("Extracted Value: {}", extractedContent);
 		saveLogToFile(logger, xpathExpression, extractedContent, logFilePath);	
+		
+		for(String paragraph: paragraphs) {
+			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder builder = factory.newDocumentBuilder();
+			Document paragraphDocument = builder.parse(new org.xml.sax.InputSource(new java.io.StringReader(paragraph)));
+			this.extractCitationsParagraphs(logger, logFilePath, paragraphDocument);
+		}
 	}
 	
-	private void extractCitationsParagraphs(Logger logger, String logFilePath, String figureId, Document document) throws XPathExpressionException {
+	private void extractCitationsParagraphs(Logger logger, String logFilePath, Document document) throws XPathExpressionException {
 		XPathFactory xPathFactory = XPathFactory.newInstance();
 		XPath xpath = xPathFactory.newXPath();
 		
-		String xpathExpression = "//xref[@ref-type='fig' and @rid='"+ figureId + "']/../xref[@ref-type='bibr']/@rid";
+		String xpathExpression = "//xref[@ref-type='bibr']/@rid";
 //		String xpathExpression = "//p[xref[@ref-type='fig' and @rid='"+ figureId + "']]";
 		XPathExpression expr = xpath.compile(xpathExpression);
-		NodeList bibrCitationsNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+		NodeList citationsParagraphsNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
 		String extractedContent = "";
 		
-		for(int i = 0; i<bibrCitationsNodes.getLength(); i++) {
-			Node node = bibrCitationsNodes.item(i);
+		for(int i = 0; i<citationsParagraphsNodes.getLength(); i++) {
+			Node node = citationsParagraphsNodes.item(i);
 			if(node!=null){ 
 				extractedContent += node.getTextContent() + " "; 
 			}
