@@ -16,13 +16,15 @@ public class Main {
 	private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
 	/* Lanciare il Programma passando i seguenti parametri al main(): 
-	 * [-xmlfiles XML_DIRECTORY] -> Path della Directory in cui ci sono i documenti .xml e i "parsing files"
+	 * [-xmldocs XML_DIRECTORY] -> Path della Directory in cui ci sono i documenti .xml e i "parsing files"
 	 * [-logdir LOG_DIRECTORY] -> Path della Directory in cui vengono scritti i file "log.txt"
+	 * [-jsondir JSON_DIRECTORY] -> Path della Directory in cui vengono inseriti i file ".json" con le informazioni estratte
 	 */
 	public static void main(String[] args) throws Exception {
 		// Benchmark XPath extraction
 		String logFilePath = null;
 		String directoryPath = null;
+		String jsonPath = null;
 
 		for (int i=0; i < args.length; i++) {
 			switch(args[i]) {
@@ -45,6 +47,16 @@ public class Main {
 					break;
 				else
 					throw new NotDirectoryException("La Directory '" + logDir.toAbsolutePath() + "' non esiste oppure non è accessibile in lettura");
+			
+			case "-jsondir":
+				jsonPath = args[++i];
+				final Path jsonDir = Paths.get(jsonPath);
+				boolean usableJsonDir = Files.isReadable(jsonDir);
+				
+				if (usableJsonDir)
+					break;
+				else
+					throw new NotDirectoryException("La Directory '" + jsonDir.toAbsolutePath() + "' non esiste oppure non è accessibile in lettura");
 				
 			default:
 				throw new IllegalArgumentException("Parametro Sconosciuto " + args[i]);
@@ -54,7 +66,7 @@ public class Main {
 		benchmarkXPathExtraction(directoryPath, logFilePath);
 
 		// Generate JSON files
-		generateJsonFiles(directoryPath);
+		generateJsonFiles(directoryPath, jsonPath);
 	}
 
 	private static void benchmarkXPathExtraction(String directoryPath, String logFilePath) throws Exception {
