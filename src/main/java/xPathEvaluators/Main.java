@@ -1,8 +1,11 @@
 package xPathEvaluators;
 
+import dataExtractions.Keywords;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.NodeList;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -128,7 +131,7 @@ public class Main {
         BaseXPathFinder dynamicXPathArticleID = new ArticleIdXPathFinder("//article-meta/article-id[@pub-id-type='pmc']");
 		BaseXPathFinder dynamicXPathTitle = new TitleXPathFinder("//title-group/article-title");
 		BaseXPathFinder dynamicXPathAbstract = new AbstractXPathFinder("//abstract");
-		BaseXPathFinder dynamicXPathKeywords = new KeywordsXPathFinder("//kwd");
+		Keywords keywordsExtractor = new Keywords("//kwd");
 
 		// Get a list of all XML files in the directory
 		List<File> allXmlFiles = FileUtil.getAllXMLFilesInDirectory(directoryPath);
@@ -144,17 +147,21 @@ public class Main {
                             String structuredInfoArticleId = dynamicXPathArticleID.extractValue(xmlFile.toURI().toASCIIString(),dynamicXPathArticleID.getBestXPath());
 							String structuredInfoTitle = dynamicXPathTitle.extractValue(xmlFile.toURI().toASCIIString(),dynamicXPathTitle.getBestXPath());
 							String structuredInfoAbstract = dynamicXPathAbstract.extractValue(xmlFile.toURI().toASCIIString(),dynamicXPathAbstract.getBestXPath());
-							//String structuredInfoKeywords = dynamicXPathKeywords.extractValue(xmlFile.toURI().toASCIIString(),dynamicXPathKeywords.getBestXPath());
-							//da verificare e lanciare(cambiare tipo di ritorno di extract value e gestire gli oggetti restituiti
+
 							// Generate JSON file with the structured information
 							JSONObject jsonObject = new JSONObject();
+							JSONArray keywordsArray = new JSONArray();
 
+							NodeList keywords = keywordsExtractor.extractKeywords(xmlFile.toURI().toASCIIString());
+							for(int i = 0; i<keywords.getLength(); i++){
+								keywordsArray.put(i,keywords.item(i).getTextContent());
+							}
 							// Add the key-value pair to the JSON object
 							jsonObject.put("pmcid", structuredInfoArticleId);
 							JSONObject contentObject = new JSONObject();
 							contentObject.put("title",structuredInfoTitle);
 							contentObject.put("abstract",structuredInfoAbstract);
-
+							contentObject.put("keywords",keywordsArray);
 							jsonObject.put("content", contentObject);
 
 

@@ -78,6 +78,8 @@ public class KeywordsXPathFinder extends BaseXPathFinder{
 			}
 		}
 	}
+
+
 	
 	private void saveLogToFile(Logger logger, String dynamicXPath, String extractedContent, String logFilePath) {
 		try {
