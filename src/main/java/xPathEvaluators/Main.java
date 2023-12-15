@@ -71,12 +71,12 @@ public class Main {
 		
 //		BaseXPathFinder dynamicXPathTitle = new TitleXPathFinder();
 //		benchmark2log.put(dynamicXPathTitle, logFilePath+"/logTitle.txt");
-//		
+		
 //		BaseXPathFinder dynamicXPathKeywords = new KeywordsXPathFinder();
 //		benchmark2log.put(dynamicXPathKeywords, logFilePath+"/logKeywords.txt");
 		
-		BaseXPathFinder dynamicXPathTable = new TableXPathFinder();
-		benchmark2log.put(dynamicXPathTable, logFilePath+"/logTable.txt");
+//		BaseXPathFinder dynamicXPathTable = new TableXPathFinder();
+//		benchmark2log.put(dynamicXPathTable, logFilePath+"/logTable.txt");
 		
 
 		// For each file in the sample, find the best XPath expression and print the result
@@ -95,9 +95,9 @@ public class Main {
 			}
 			
 			Files.write(Paths.get(specificLogPath), String.format("----------\nRisultati per %s\n", xPathFinder.toString()).getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND);
-			TableXPathFinder tf = (TableXPathFinder) xPathFinder;
-			Files.write(Paths.get(specificLogPath), String.format("Numero paragrafi che citano una tabella: %d, Numero citazioni riuscite (valutazione): %d\n", tf.getCitationsNumber() , tf.getPunteggioCitations()).getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND);
-
+//				TableXPathFinder tf = (TableXPathFinder) xPathFinder;
+//				Files.write(Paths.get(specificLogPath), String.format("Numero paragrafi che citano una tabella: %d, Numero citazioni riuscite (valutazione): %d\n", tf.getCitationsNumber() , tf.getPunteggioParagraphCitations()).getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND);
+				
 			Map<String, Integer> results = xPathFinder.getOrderedResults();
 			for (Map.Entry<String, Integer> entry: results.entrySet()) {
 				String expression = entry.getKey();
@@ -108,15 +108,6 @@ public class Main {
 		
 	}
 	
-	private static void saveLogToFile(String fileName, String bestXPath, Integer score, String extractedValue, String logFilePath) {
-		// Implementa il salvataggio delle informazioni su file
-		try {
-			Files.write(Paths.get(logFilePath), String.format("File: %s, Best XPath: %s, Score: %d, Extracted Value: %s%n", fileName, bestXPath, score, extractedValue).getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND);
-		} catch (IOException e) {
-			logger.error("Errore durante il salvataggio del log su file", e);
-		}
-	}
-
 	//TO-DO (L'idea è di non caricarsi tutti i file xml in memoria ma analizzarli come stream)
 	/*private static void generateJsonFiles() throws Exception {
         BaseXPathFinder dynamicXPath = new ArticleIdXPathFinder();

@@ -43,60 +43,29 @@ public class FigureXPathFinder extends BaseXPathFinder{
 		return punteggioParagraphCitations;
 	}
 
-	public void setPunteggioParagraphCitations(int punteggioParagraphCitations) {
-		this.punteggioParagraphCitations = punteggioParagraphCitations;
-	}
-
 	public int getFigureNumber() {
 		return figureNumber;
-	}
-
-	public void setFigureNumber(int figureNumber) {
-		this.figureNumber = figureNumber;
 	}
 
 	public int getCaptionNumber() {
 		return captionNumber;
 	}
 
-	public void setCaptionNumber(int captionNumber) {
-		this.captionNumber = captionNumber;
-	}
-
 	public int getSourceNumber() {
 		return sourceNumber;
-	}
-
-	public void setSourceNumber(int sourceNumber) {
-		this.sourceNumber = sourceNumber;
 	}
 
 	public int getCitationsNumber() {
 		return citationsNumber;
 	}
 
-	public void setCitationsNumber(int citationsNumber) {
-		this.citationsNumber = citationsNumber;
-	}
-
 	public int getParagraphsNumber() {
 		return paragraphsNumber;
-	}
-
-	public void setParagraphsNumber(int paragraphsNumber) {
-		this.paragraphsNumber = paragraphsNumber;
 	}
 
 	public int getPunteggioCaptionCitations() {
 		return punteggioCaptionCitations;
 	}
-
-	public void setPunteggioCaptionCitations(int punteggioCaptionCitations) {
-		this.punteggioCaptionCitations = punteggioCaptionCitations;
-	}
-
-	
-	
 	
 	@Override
 	public List<String> generateDynamicXPaths() {

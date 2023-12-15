@@ -41,80 +41,41 @@ public class TableXPathFinder extends BaseXPathFinder{
 	private int numberTableWithCells = 0;
 	private int punteggioCaptionCitations = 0;
 
-
 	
-
 	public int getPunteggioCaptionCitations() {
 		return punteggioCaptionCitations;
-	}
-
-	public void setPunteggioCaptionCitations(int punteggioCaptionCitations) {
-		this.punteggioCaptionCitations = punteggioCaptionCitations;
 	}
 
 	public int getPunteggioParagraphCitations() {
 		return punteggioParagraphCitations;
 	}
 
-	public void setPunteggioParagraphCitations(int punteggioParagraphCitations) {
-		this.punteggioParagraphCitations = punteggioParagraphCitations;
-	}
-
 	public int getTableNumber() {
 		return tableNumber;
-	}
-
-	public void setTableNumber(int tableNumber) {
-		this.tableNumber = tableNumber;
 	}
 
 	public int getBodyNumber() {
 		return bodyNumber;
 	}
 
-	public void setBodyNumber(int bodyNumber) {
-		this.bodyNumber = bodyNumber;
-	}
-
 	public int getCaptionNumber() {
 		return captionNumber;
-	}
-
-	public void setCaptionNumber(int captionNumber) {
-		this.captionNumber = captionNumber;
 	}
 
 	public int getFootsNumber() {
 		return footsNumber;
 	}
 
-	public void setFootsNumber(int footsNumber) {
-		this.footsNumber = footsNumber;
-	}
-
 	public int getCitationsNumber() {
 		return citationsNumber;
-	}
-
-	public void setCitationsNumber(int citationsNumber) {
-		this.citationsNumber = citationsNumber;
 	}
 
 	public int getParagraphsNumber() {
 		return paragraphsNumber;
 	}
 
-	public void setParagraphsNumber(int paragraphsNumber) {
-		this.paragraphsNumber = paragraphsNumber;
-	}
-
-
 	public int getNumberTableWithCells() {
 		return numberTableWithCells;
-	}
-
-	public void setNumberTableWithCells(int numberTableWithCells) {
-		this.numberTableWithCells = numberTableWithCells;
 	}
 
 
