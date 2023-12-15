@@ -1,12 +1,14 @@
 package xPathEvaluators;
 
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,8 +47,7 @@ public class Main {
 					break;
 				else
 					throw new NotDirectoryException("La Directory '" + logDir.toAbsolutePath() + "' non esiste oppure non è accessibile in lettura");
-				
-			default:
+				default:
 				throw new IllegalArgumentException("Parametro Sconosciuto " + args[i]);
 			}
 		}
@@ -54,7 +55,7 @@ public class Main {
 		benchmarkXPathExtraction(directoryPath, logFilePath);
 
 		// Generate JSON files
-		generateJsonFiles(directoryPath);
+		generateJsonFiles(directoryPath,"/Users/alessandropesare/json");
 	}
 
 	private static void benchmarkXPathExtraction(String directoryPath, String logFilePath) throws Exception {
@@ -130,9 +131,32 @@ public class Main {
                             String structuredInfoArticleId = dynamicXPathArticleID.extractValue(xmlFile.toURI().toASCIIString(),dynamicXPathArticleID.getBestXPath());
 							String structuredInfoTitle = dynamicXPathTitle.extractValue(xmlFile.toURI().toASCIIString(),dynamicXPathTitle.getBestXPath());
 							String structuredInfoAbstract = dynamicXPathAbstract.extractValue(xmlFile.toURI().toASCIIString(),dynamicXPathAbstract.getBestXPath());
-							String structuredInfoKeywords = dynamicXPathKeywords.extractValue(xmlFile.toURI().toASCIIString(),dynamicXPathKeywords.getBestXPath());
+							//String structuredInfoKeywords = dynamicXPathKeywords.extractValue(xmlFile.toURI().toASCIIString(),dynamicXPathKeywords.getBestXPath());
 							//da verificare e lanciare(cambiare tipo di ritorno di extract value e gestire gli oggetti restituiti
 							// Generate JSON file with the structured information
+							JSONObject jsonObject = new JSONObject();
+
+							// Add the key-value pair to the JSON object
+							jsonObject.put("pmcid", structuredInfoArticleId);
+							JSONObject contentObject = new JSONObject();
+							contentObject.put("title",structuredInfoTitle);
+							contentObject.put("abstract",structuredInfoAbstract);
+
+							jsonObject.put("content", contentObject);
+
+
+							// Specify the file path where you want to save the JSON file
+							String filePath = jsonPath;
+							String filename = xmlFile.getName();
+							filename = filename.replace(".xml",".json");
+
+							try (FileWriter fileWriter = new FileWriter(filePath+"/"+filename)) {
+								// Scrive l'oggetto JSON nel file
+								fileWriter.write(jsonObject.toString(2)); // L'argomento 2 è per l'indentazione (opzionale)
+								System.out.println("File JSON creato con successo!");
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
 
                         } catch (Exception e) {
                             e.printStackTrace();
