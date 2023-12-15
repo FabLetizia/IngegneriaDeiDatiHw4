@@ -2,7 +2,9 @@ package dataExtractions;
 
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -34,7 +36,7 @@ public class Table {
 	private List<Paragraph> paragraphs;
 	private List<Cell> cells;
 
-	public JSONObject getTable(String xmlFile, String tableId) throws Exception {
+	public Map<String, Object> getTable(String xmlFile, String tableId) throws Exception {
 		this.tableId = tableId;
 		this.body = this.extractBody(xmlFile);
 		this.caption = this.extractCaption(xmlFile);
@@ -42,18 +44,28 @@ public class Table {
 		this.foots = this.extractFoots(xmlFile);
 //		this.paragraphs = this.extractParagraphs(xmlFile);
 		
-		JSONObject jsonTable = new JSONObject();
-        jsonTable.put("table_id", this.tableId);
-        jsonTable.put("body", this.body);
-        jsonTable.put("caption", this.caption);
+	
+//		JSONObject jsonTable = new JSONObject();
+//        jsonTable.put("table_id", this.tableId);
+//        jsonTable.put("body", this.body);
+//        jsonTable.put("caption", this.caption);
         
         JSONArray jsonCaptionCitations = new JSONArray(this.captionCitations);
         JSONArray jsonFoots = new JSONArray(this.foots);
         
-        jsonTable.put("caption_citations", jsonCaptionCitations);
-        jsonTable.put("foots", jsonFoots);
+//        jsonTable.put("caption_citations", jsonCaptionCitations);
+//        jsonTable.put("foots", jsonFoots);
 
-		return jsonTable;
+        
+        Map<String, Object> tableMap = new LinkedHashMap<>();
+		tableMap.put("table_id", this.tableId);
+		tableMap.put("body", this.body);
+		tableMap.put("caption", this.caption);
+		tableMap.put("caption_citations", jsonCaptionCitations);
+		tableMap.put("foots", jsonFoots);
+        
+        
+		return tableMap;
 
 	}
 

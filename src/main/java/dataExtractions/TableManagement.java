@@ -21,15 +21,15 @@ public class TableManagement {
         XPathExpression expr = xpath.compile("//table-wrap[@id]/@id");
         NodeList tableList = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
         
-        JSONArray jsonTable = new JSONArray();
+        JSONArray jsonTables = new JSONArray();
         for(int i = 0; i<tableList.getLength();i++) {
         	Node node = tableList.item(i);
         	if(node != null) {
         		Table table = new Table();
-        		jsonTable.put(table.getTable(xmlFile, tableList.item(i).getTextContent())); 
+        		jsonTables.put(table.getTable(xmlFile, tableList.item(i).getTextContent())); 
         	}
         }
-        return jsonTable;
+        return jsonTables;
     }
     public Document loadXmlDocument(String xmlFile) throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();

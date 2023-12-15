@@ -1,22 +1,28 @@
 package xPathEvaluators;
 
-import dataExtractions.Figure;
-import dataExtractions.Keywords;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.NotDirectoryException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.NodeList;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import dataExtractions.Figure;
+import dataExtractions.Keywords;
+import dataExtractions.TableManagement;
 
 public class Main {
 	private static final int SAMPLE_SIZE = 100;
@@ -134,6 +140,7 @@ public class Main {
 		BaseXPathFinder dynamicXPathTitle = new TitleXPathFinder("//title-group/article-title");
 		BaseXPathFinder dynamicXPathAbstract = new AbstractXPathFinder("//abstract");
 		Keywords keywordsExtractor = new Keywords("//kwd");
+		TableManagement tableExtractor = new TableManagement();
 		Figure figureExtractor = new Figure();
 
 		// Get a list of all XML files in the directory
@@ -150,7 +157,7 @@ public class Main {
                             String structuredInfoArticleId = dynamicXPathArticleID.extractValue(xmlFile.toURI().toASCIIString(),dynamicXPathArticleID.getBestXPath());
 							String structuredInfoTitle = dynamicXPathTitle.extractValue(xmlFile.toURI().toASCIIString(),dynamicXPathTitle.getBestXPath());
 							String structuredInfoAbstract = dynamicXPathAbstract.extractValue(xmlFile.toURI().toASCIIString(),dynamicXPathAbstract.getBestXPath());
-
+							
 							// Generate JSON file with the structured information
 							JSONObject jsonObject = new JSONObject();
 							JSONArray keywordsArray = new JSONArray();
@@ -161,6 +168,9 @@ public class Main {
 							for(int i = 0; i<keywords.getLength(); i++){
 								keywordsArray.put(i,keywords.item(i).getTextContent());
 							}
+							
+							
+							
 							for(int i = 0; i<figuresIDs.getLength(); i++){
 								JSONObject figureObject = new JSONObject();
 								figureObject.put("fig_id",figuresIDs.item(i).getTextContent());
@@ -171,6 +181,7 @@ public class Main {
 							contentMap.put("title", structuredInfoTitle);
 							contentMap.put("abstract", structuredInfoAbstract);
 							contentMap.put("keywords", keywordsArray);
+							contentMap.put("tables", tableExtractor.extractTables(xmlFile.toURI().toASCIIString()));
 							contentMap.put("figures", figuresArray);
 
 							// Add the key-value pair to the JSON object
