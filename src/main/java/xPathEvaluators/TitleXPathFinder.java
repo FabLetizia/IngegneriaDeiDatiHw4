@@ -1,4 +1,13 @@
 package xPathEvaluators;
+
+import org.slf4j.Logger;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathFactory;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -7,19 +16,18 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathFactory;
-
-import org.slf4j.Logger;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-
 public class TitleXPathFinder extends BaseXPathFinder{
 	/*
     Ricerca della migliore xpath per l'estrazione del titolo dell'articolo
 	 */
+	private String bestXPath;
+
+	public TitleXPathFinder(String bestXPath){
+		this.bestXPath = bestXPath;
+	}
+	public String getBestXPath(){
+		return this.bestXPath;
+	}
 	@Override
 	public void findBestXPath(String xmlFile, Logger logger, String logFilePath) throws Exception {
 

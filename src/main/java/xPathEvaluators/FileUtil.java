@@ -22,7 +22,7 @@ public class FileUtil {
 		return allFiles.subList(0, sampleSize);
 	}
 
-	private static List<File> getAllXMLFilesInDirectory(String directoryPath) {
+	public static List<File> getAllXMLFilesInDirectory(String directoryPath) {
 		List<File> files = new ArrayList<>();
 		File directory = new File(directoryPath);
 		File[] fileList = directory.listFiles();

@@ -1,12 +1,9 @@
 package xPathEvaluators;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.List;
+
+import org.slf4j.Logger;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
@@ -16,13 +13,27 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathFactory;
-
-import org.slf4j.Logger;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AbstractXPathFinder extends BaseXPathFinder{
+	private String bestXPath;
+	public AbstractXPathFinder(){
+	}
+
+	public AbstractXPathFinder(String bestXPath){
+		this.bestXPath = bestXPath;
+	}
+	public String getBestXPath(){
+		return this.bestXPath;
+	}
+
 	@Override
 	public List<String> generateDynamicXPaths() {
 		// Implementa la logica per generare espressioni XPath dinamiche basate sul tuo caso specifico

@@ -1,21 +1,18 @@
 package xPathEvaluators;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.slf4j.Logger;
 import org.w3c.dom.Document;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.util.*;
+
 public abstract class BaseXPathFinder implements XPathFinder{
 	
 	protected Map<String, Integer> expression2score = new HashMap<>();
-	
+
+    public abstract String getBestXPath();
+
     public Document loadXmlDocument(String xmlFile) throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();

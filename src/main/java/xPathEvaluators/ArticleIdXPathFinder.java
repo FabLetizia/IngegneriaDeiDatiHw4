@@ -20,6 +20,15 @@ public class ArticleIdXPathFinder extends BaseXPathFinder{
 	/*
     Ricerca della migliore xpath per l'estrazione dell'article id
 	 */
+	private String bestXPath;
+	public ArticleIdXPathFinder(){
+	}
+	public ArticleIdXPathFinder(String bestXPath){
+		this.bestXPath = bestXPath;
+	}
+	public String getBestXPath(){
+		return this.bestXPath;
+	}
 	@Override
 	public void findBestXPath(String xmlFile, Logger logger, String logFilePath) throws Exception {
 

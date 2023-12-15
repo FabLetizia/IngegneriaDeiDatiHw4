@@ -1,18 +1,15 @@
 package xPathEvaluators;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.NotDirectoryException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Main {
 	private static final int SAMPLE_SIZE = 100;
@@ -57,7 +54,7 @@ public class Main {
 		benchmarkXPathExtraction(directoryPath, logFilePath);
 
 		// Generate JSON files
-		//generateJsonFiles();
+		generateJsonFiles(directoryPath);
 	}
 
 	private static void benchmarkXPathExtraction(String directoryPath, String logFilePath) throws Exception {
@@ -109,35 +106,35 @@ public class Main {
 	}
 	
 	//TO-DO (L'idea è di non caricarsi tutti i file xml in memoria ma analizzarli come stream)
-	/*private static void generateJsonFiles() throws Exception {
-        BaseXPathFinder dynamicXPath = new ArticleIdXPathFinder();
+	private static void generateJsonFiles(String directoryPath,String jsonPath) throws Exception{
+		// definiamo tutte le Xpath dinamiche che abbiamo testato in precedenza e utilizziamole per l'estrazione
+        BaseXPathFinder dynamicXPathArticleID = new ArticleIdXPathFinder("//article-meta/article-id[@pub-id-type='pmc']");
+		BaseXPathFinder dynamicXPathTitle = new TitleXPathFinder("//title-group/article-title");
+		BaseXPathFinder dynamicXPathAbstract = new AbstractXPathFinder("//abstract");
+		BaseXPathFinder dynamicXPathKeywords = new KeywordsXPathFinder("//kwd");
 
-        // Get a list of all XML files in the directory
-        File[] allXmlFiles = new File(DIRECTORY_PATH).listFiles((dir, name) -> name.toLowerCase().endsWith(".xml"));
+		// Get a list of all XML files in the directory
+		List<File> allXmlFiles = FileUtil.getAllXMLFilesInDirectory(directoryPath);
 
-        // Process one XML file at a time and generate the corresponding JSON file
+		// Process one XML file at a time and generate the corresponding JSON file
         if (allXmlFiles != null) {
-            Arrays.stream(allXmlFiles)
-                    .limit(SAMPLE_SIZE) // Limit the number of files processed to the sample size
-                    .forEach(xmlFile -> {
+            allXmlFiles.stream().forEach(xmlFile -> {
                         try {
                             System.out.println("Generating JSON for: " + xmlFile.getName());
 
                             // Use dynamicXPath or another suitable XPathFinder to extract structured information
                             // For simplicity, let's assume a method extractStructuredInfo() is available
-                            String structuredInfo = dynamicXPath.extractStructuredInfo(xmlFile.getAbsolutePath());
+                            String structuredInfoArticleId = dynamicXPathArticleID.extractValue(xmlFile.toURI().toASCIIString(),dynamicXPathArticleID.getBestXPath());
+							String structuredInfoTitle = dynamicXPathTitle.extractValue(xmlFile.toURI().toASCIIString(),dynamicXPathTitle.getBestXPath());
+							String structuredInfoAbstract = dynamicXPathAbstract.extractValue(xmlFile.toURI().toASCIIString(),dynamicXPathAbstract.getBestXPath());
+							String structuredInfoKeywords = dynamicXPathKeywords.extractValue(xmlFile.toURI().toASCIIString(),dynamicXPathKeywords.getBestXPath());
+							//da verificare e lanciare(cambiare tipo di ritorno di extract value e gestire gli oggetti restituiti
+							// Generate JSON file with the structured information
 
-                            // Generate JSON file with the structured information
-                            String jsonFileName = xmlFile.getName().replace(".xml", ".json");
-                            String jsonFilePath = DIRECTORY_PATH + File.separator + jsonFileName;
-                            JsonUtil.writeJsonFile(jsonFilePath, structuredInfo);
-
-                            System.out.println("JSON File generated: " + jsonFilePath);
-                            System.out.println();
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
                     });
         }
-    }*/
+    }
 }
