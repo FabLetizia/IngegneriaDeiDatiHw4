@@ -69,6 +69,7 @@ public class AbstractXPathFinder extends BaseXPathFinder{
 			for(int i = 0; i<abstractNodes.getLength(); i++) {
 				Node node = abstractNodes.item(i);
 				if(node!=null){
+					try {
 					extractedContentNode = this.serializeNodeToString(node);
 					extractedContentNode = extractedContentNode.replaceAll("<\\?xml.*\\?>", "");
 					extractedContentNode = extractedContentNode.replaceAll("<abstract[^>]*>", "");
@@ -77,6 +78,11 @@ public class AbstractXPathFinder extends BaseXPathFinder{
 					
 					Integer value = this.expression2score.get(dynamicXPath);
 					this.expression2score.put(dynamicXPath, value+1);
+					}
+					
+					catch (RuntimeException e) {
+						continue;
+					}
 				}
 			}
 

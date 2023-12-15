@@ -78,6 +78,9 @@ public class Main {
 //		BaseXPathFinder dynamicXPathTable = new TableXPathFinder();
 //		benchmark2log.put(dynamicXPathTable, logFilePath+"/logTable.txt");
 		
+//		BaseXPathFinder dynamicXPathAbstract = new AbstractXPathFinder();
+//		benchmark2log.put(dynamicXPathAbstract, logFilePath+"/logAbstract.txt");
+		
 
 		// For each file in the sample, find the best XPath expression and print the result
 		for (BaseXPathFinder xPathFinder: benchmark2log.keySet()) {
