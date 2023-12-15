@@ -1,5 +1,6 @@
 package xPathEvaluators;
 
+import dataExtractions.Figure;
 import dataExtractions.Keywords;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -13,6 +14,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -132,6 +134,7 @@ public class Main {
 		BaseXPathFinder dynamicXPathTitle = new TitleXPathFinder("//title-group/article-title");
 		BaseXPathFinder dynamicXPathAbstract = new AbstractXPathFinder("//abstract");
 		Keywords keywordsExtractor = new Keywords("//kwd");
+		Figure figureExtractor = new Figure();
 
 		// Get a list of all XML files in the directory
 		List<File> allXmlFiles = FileUtil.getAllXMLFilesInDirectory(directoryPath);
@@ -151,19 +154,28 @@ public class Main {
 							// Generate JSON file with the structured information
 							JSONObject jsonObject = new JSONObject();
 							JSONArray keywordsArray = new JSONArray();
+							JSONArray figuresArray = new JSONArray();
 
 							NodeList keywords = keywordsExtractor.extractKeywords(xmlFile.toURI().toASCIIString());
+							NodeList figuresIDs = figureExtractor.extractIDs(xmlFile.toURI().toASCIIString());
 							for(int i = 0; i<keywords.getLength(); i++){
 								keywordsArray.put(i,keywords.item(i).getTextContent());
 							}
+							for(int i = 0; i<figuresIDs.getLength(); i++){
+								JSONObject figureObject = new JSONObject();
+								figureObject.put("fig_id",figuresIDs.item(i).getTextContent());
+								figureObject.put("caption",figureExtractor.extractCaptions(xmlFile.toURI().toASCIIString(),figuresIDs.item(i).getTextContent()));
+								figuresArray.put(i,figureObject);
+							}
+							Map<String, Object> contentMap = new LinkedHashMap<>();
+							contentMap.put("title", structuredInfoTitle);
+							contentMap.put("abstract", structuredInfoAbstract);
+							contentMap.put("keywords", keywordsArray);
+							contentMap.put("figures", figuresArray);
+
 							// Add the key-value pair to the JSON object
 							jsonObject.put("pmcid", structuredInfoArticleId);
-							JSONObject contentObject = new JSONObject();
-							contentObject.put("title",structuredInfoTitle);
-							contentObject.put("abstract",structuredInfoAbstract);
-							contentObject.put("keywords",keywordsArray);
-							jsonObject.put("content", contentObject);
-
+							jsonObject.put("content",contentMap);
 
 							// Specify the file path where you want to save the JSON file
 							String filePath = jsonPath;

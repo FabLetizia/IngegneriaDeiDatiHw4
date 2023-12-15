@@ -32,9 +32,6 @@ public class FigureXPathFinder extends BaseXPathFinder{
 	private int paragraphsNumber = 0;
 	private int punteggioCaptionCitations = 0;
 	private int punteggioParagraphCitations = 0;
-	
-	
-
 	public int getPunteggioParagraphCitations() {
 		return punteggioParagraphCitations;
 	}
@@ -72,9 +69,8 @@ public class FigureXPathFinder extends BaseXPathFinder{
 	public List<String> generateDynamicXPaths() {
 		List<String> xpaths = new ArrayList<>();
 		xpaths.add("//fig[@id]/@id");
-
 		//xpaths.add("//id");
-		// Aggiungi altre espressioni XPath secondo necessità
+		//Aggiungi altre espressioni XPath secondo necessità
 		return xpaths;
 	}
 
@@ -114,8 +110,8 @@ public class FigureXPathFinder extends BaseXPathFinder{
 				if(node!=null){
 					extractedContent += node.getTextContent() + " ";
 					this.figureNumber++;
-//					this.extractCaption(logger, logFilePath, node.getTextContent(), document);
-//					this.extractSource(logger, logFilePath, node.getTextContent(), document);
+					this.extractCaption(logger, logFilePath, node.getTextContent(), document);
+					this.extractSource(logger, logFilePath, node.getTextContent(), document);
 					this.extractCitedInParagraphs(logger, logFilePath, node.getTextContent(), document);
 				}
 			}
