@@ -37,7 +37,7 @@ public class TableXPathFinder extends BaseXPathFinder{
 	private int numberTableWithCells = 0;
 	private int punteggioCaptionCitations = 0;
 
-	
+
 	public int getPunteggioCaptionCitations() {
 		return punteggioCaptionCitations;
 	}
@@ -105,11 +105,11 @@ public class TableXPathFinder extends BaseXPathFinder{
 					Node node = tableIdList.item(i);
 					this.tableNumber++;
 					extractedContent += node.getTextContent()+" ";
-					//					this.extractBody(logger, logFilePath, node.getTextContent(), document);
+					this.extractBody(logger, logFilePath, node.getTextContent(), document);
 					this.extractCaption(logger, logFilePath, node.getTextContent(), document);
-					//					this.extractFoots(logger, logFilePath, node.getTextContent(), document);
-					//					this.extractTextParagraphs(logger, logFilePath, node.getTextContent(), document);
-					//					this.extractContentCells(logger, logFilePath, node.getTextContent(), document);
+					this.extractFoots(logger, logFilePath, node.getTextContent(), document);
+					this.extractTextParagraphs(logger, logFilePath, node.getTextContent(), document);
+					this.extractContentCells(logger, logFilePath, node.getTextContent(), document);
 				}
 
 				if(extractedContent.contains(" ") && (extractedContent.contains("t") || extractedContent.contains("T"))){
@@ -140,7 +140,7 @@ public class TableXPathFinder extends BaseXPathFinder{
 
 	/*
         Generazione delle espressioni xpath candidate
-         */
+	 */
 	@Override
 	public List<String> generateDynamicXPaths() {
 		// Implementa la logica per generare espressioni XPath dinamiche basate sul tuo caso specifico
