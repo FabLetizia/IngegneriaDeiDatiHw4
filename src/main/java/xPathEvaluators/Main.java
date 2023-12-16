@@ -173,19 +173,27 @@ public class Main {
 						JSONArray figuresArray = new JSONArray();
 
 						NodeList keywords = keywordsExtractor.extractKeywords(xmlFile.toURI().toASCIIString());
+						
 						NodeList figuresIDs = figureExtractor.extractIDs(xmlFile.toURI().toASCIIString());
 						for(int i = 0; i<keywords.getLength(); i++){
 							keywordsArray.put(i,keywords.item(i).getTextContent());
 						}
 
-
-
 						for(int i = 0; i<figuresIDs.getLength(); i++){
-							JSONObject figureObject = new JSONObject();
-							figureObject.put("fig_id",figuresIDs.item(i).getTextContent());
-							figureObject.put("caption",figureExtractor.extractCaptions(xmlFile.toURI().toASCIIString(),figuresIDs.item(i).getTextContent()));
+							Map<String, Object> figureObject = new LinkedHashMap<>();
+			
+							figureObject.put("fig_id", figuresIDs.item(i).getTextContent());
+							figureObject.put("src", figureExtractor.extractSources(xmlFile.toURI().toASCIIString(), figuresIDs.item(i).getTextContent(), xmlFile.getName()));
+							figureObject.put("caption", figureExtractor.extractCaptions(xmlFile.toURI().toASCIIString(),figuresIDs.item(i).getTextContent()));
+							figureObject.put("caption_citations", figureExtractor.extractCaptionCitations(xmlFile.toURI().toASCIIString(), figuresIDs.item(i).getTextContent()));
+							
+							figureObject.put("paragraphs", figureExtractor.extractParagraphs(xmlFile.toURI().toASCIIString(), figuresIDs.item(i).getTextContent()));
+							
 							figuresArray.put(i,figureObject);
 						}
+						
+						
+						
 						Map<String, Object> contentMap = new LinkedHashMap<>();
 						contentMap.put("title", structuredInfoTitle);
 						contentMap.put("abstract", structuredInfoAbstract);
