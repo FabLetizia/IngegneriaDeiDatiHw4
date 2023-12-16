@@ -1,8 +1,9 @@
 package dataExtractions;
 
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.List;
+import org.json.JSONArray;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -11,16 +12,9 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
-
-import org.json.JSONArray;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+import javax.xml.xpath.*;
+import java.io.StringWriter;
+import java.util.*;
 
 public class Figure {
 
@@ -146,28 +140,60 @@ public class Figure {
 			extractContent = this.serializeNodeToString(citationNode);
 			extractContent = extractContent.replaceAll("<\\?xml.*\\?>", "");
 		}
-		
 		return extractContent;
 	}
+
+    public Set<String> extractParagraphCitations(String xmlFile,Document document) throws Exception {
+        Set<String> citations = new HashSet<>();
+        XPathFactory xPathFactory = XPathFactory.newInstance();
+        XPath xpath = xPathFactory.newXPath();
+        String xpathExpression = "//xref[@ref-type='bibr']/@rid";
+        XPathExpression expr = xpath.compile(xpathExpression);
+
+        NodeList paragraphsCitationsNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+
+        for (int i = 0; i < paragraphsCitationsNodes.getLength(); i++) {
+            Node node = paragraphsCitationsNodes.item(i);
+            if (node != null) {
+                String extractedContent = this.extractBibr(node.getTextContent(), xmlFile);
+                if (!extractedContent.isEmpty())
+                    citations.add(extractedContent);
+            }
+        }
+        return citations;
+    }
     
     
-	public JSONArray extractParagraphs(String xmlFile, String figureId) {
+	public JSONArray extractParagraphs(String xmlFile, String figureId) throws Exception {
     	JSONArray paragraphsArray = new JSONArray();
     	
     	//Dato il figureId, estrai tutti i paragrafi -> primo step
-    	
-    	//Per ogni paragrafo, estrai tutti i riferimenti -> secondo step
-    	
-    	
-    	
-    	
-    	
-    	
-    	
-    	
+        XPathFactory xPathFactory = XPathFactory.newInstance();
+        XPath xpath = xPathFactory.newXPath();
+
+        String xpathExpression = "//xref[@ref-type='fig' and @rid='" + figureId + "']/..";
+        XPathExpression expr = xpath.compile(xpathExpression);
+        NodeList citationsNodes = (NodeList) expr.evaluate(this.loadXmlDocument(xmlFile), XPathConstants.NODESET);
+        String extractedContentNode = "";
+
+        for(int i = 0; i<citationsNodes.getLength(); i++) {
+            Node node = citationsNodes.item(i);
+            if(node!=null){
+                LinkedHashMap<String,Object> contentparagraph = new LinkedHashMap<>();
+                extractedContentNode = this.serializeNodeToString(node);
+                extractedContentNode = extractedContentNode.replaceAll("<\\?xml.*\\?>", "");
+                contentparagraph.put("text",extractedContentNode);
+                DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                DocumentBuilder builder = factory.newDocumentBuilder();
+                Document paragraphDocument = builder.parse(new org.xml.sax.InputSource(new java.io.StringReader(extractedContentNode)));
+                contentparagraph.put("citations", this.extractParagraphCitations(xmlFile,paragraphDocument));
+                paragraphsArray.put(i,contentparagraph);
+            }
+        }
     	return paragraphsArray;
     }
-    
+
+
     
     
     

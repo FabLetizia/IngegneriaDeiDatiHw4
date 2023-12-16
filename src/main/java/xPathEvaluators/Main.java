@@ -1,30 +1,25 @@
 package xPathEvaluators;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.NotDirectoryException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
+import dataExtractions.Figure;
+import dataExtractions.Keywords;
+import dataExtractions.TableManagement;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.NodeList;
 
-import dataExtractions.Figure;
-import dataExtractions.Keywords;
-import dataExtractions.TableManagement;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Main {
 	private static final int SAMPLE_SIZE = 100;
@@ -186,7 +181,6 @@ public class Main {
 							figureObject.put("src", figureExtractor.extractSources(xmlFile.toURI().toASCIIString(), figuresIDs.item(i).getTextContent(), xmlFile.getName()));
 							figureObject.put("caption", figureExtractor.extractCaptions(xmlFile.toURI().toASCIIString(),figuresIDs.item(i).getTextContent()));
 							figureObject.put("caption_citations", figureExtractor.extractCaptionCitations(xmlFile.toURI().toASCIIString(), figuresIDs.item(i).getTextContent()));
-							
 							figureObject.put("paragraphs", figureExtractor.extractParagraphs(xmlFile.toURI().toASCIIString(), figuresIDs.item(i).getTextContent()));
 							
 							figuresArray.put(i,figureObject);
