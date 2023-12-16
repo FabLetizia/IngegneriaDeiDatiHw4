@@ -44,63 +44,128 @@ public class Table {
 		this.caption = this.extractCaption(xmlFile);
 		this.captionCitations = this.extractCaptionCitations(xmlFile);
 		this.foots = this.extractFoots(xmlFile);
-//		this.paragraphs = this.extractParagraphs(xmlFile);
 		this.extractCells(xmlFile);
-	
-//		JSONObject jsonTable = new JSONObject();
-//        jsonTable.put("table_id", this.tableId);
-//        jsonTable.put("body", this.body);
-//        jsonTable.put("caption", this.caption);
-        
-        JSONArray jsonCaptionCitations = new JSONArray(this.captionCitations);
-        JSONArray jsonFoots = new JSONArray(this.foots);
-        JSONArray jsonCells = new JSONArray();
-        
-        for(Cell cell: this.cells) {
-        	JSONObject jsonCellObject = new JSONObject();
-        	jsonCellObject.put("content", cell.getContent());
-        	JSONArray jsonCitedIn = new JSONArray(cell.getCitediIn());
-        	jsonCellObject.put("cited_in", jsonCitedIn);
-        	jsonCells.put(jsonCellObject);
-        }
-        
-//        jsonTable.put("caption_citations", jsonCaptionCitations);
-//        jsonTable.put("foots", jsonFoots);
 
-        
-        Map<String, Object> tableMap = new LinkedHashMap<>();
+		//		JSONObject jsonTable = new JSONObject();
+		//        jsonTable.put("table_id", this.tableId);
+		//        jsonTable.put("body", this.body);
+		//        jsonTable.put("caption", this.caption);
+
+		JSONArray jsonCaptionCitations = new JSONArray(this.captionCitations);
+		JSONArray jsonFoots = new JSONArray(this.foots);
+		JSONArray jsonCells = new JSONArray();
+		JSONArray jsonParagraphs = this.extractParagraphs(xmlFile);
+
+		for(Cell cell: this.cells) {
+			JSONObject jsonCellObject = new JSONObject();
+			jsonCellObject.put("content", cell.getContent());
+			JSONArray jsonCitedIn = new JSONArray(cell.getCitediIn());
+			jsonCellObject.put("cited_in", jsonCitedIn);
+			jsonCells.put(jsonCellObject);
+		}
+
+		//        jsonTable.put("caption_citations", jsonCaptionCitations);
+		//        jsonTable.put("foots", jsonFoots);
+
+
+		Map<String, Object> tableMap = new LinkedHashMap<>();
 		tableMap.put("table_id", this.tableId);
 		tableMap.put("body", this.body);
 		tableMap.put("caption", this.caption);
 		tableMap.put("caption_citations", jsonCaptionCitations);
 		tableMap.put("foots", jsonFoots);
+		tableMap.put("paragraphs", jsonParagraphs);
 		tableMap.put("cells", jsonCells);
-        
-        
+		
+
+
 		return tableMap;
 
 	}
 
-	private void extractCells(String xmlFile) throws Exception {
-		List<Cell> cells = new ArrayList<Cell>();
+	private JSONArray extractParagraphs(String xmlFile) throws Exception {
+		JSONArray paragraphsArray = new JSONArray();
 		Document document = this.loadXmlDocument(xmlFile);
 		
 		XPathFactory xPathFactory = XPathFactory.newInstance();
 		XPath xpath = xPathFactory.newXPath();
 
+		String xpathExpression = "//xref[@ref-type='table' and @rid='" + this.tableId + "']/..";
+		XPathExpression expr = xpath.compile(xpathExpression);
+		NodeList citationsNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+		String extractedContentNode = "";
+
+		for(int i = 0; i<citationsNodes.getLength(); i++) {
+			Node node = citationsNodes.item(i);
+			if(node!=null){
+				LinkedHashMap<String,Object> contentparagraph = new LinkedHashMap<>();
+				extractedContentNode = this.serializeNodeToString(node);
+				extractedContentNode = extractedContentNode.replaceAll("<\\?xml.*\\?>", "");
+				contentparagraph.put("text",extractedContentNode);
+				DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+				DocumentBuilder builder = factory.newDocumentBuilder();
+				Document paragraphDocument = builder.parse(new org.xml.sax.InputSource(new java.io.StringReader(extractedContentNode)));
+				contentparagraph.put("citations", this.extractParagraphCitations(xmlFile,paragraphDocument));
+				paragraphsArray.put(i,contentparagraph);
+			}
+		}
+		return paragraphsArray;
+	}
+	
+	public Set<String> extractParagraphCitations(String xmlFile,Document document) throws Exception {
+        Set<String> citations = new HashSet<>();
+        XPathFactory xPathFactory = XPathFactory.newInstance();
+        XPath xpath = xPathFactory.newXPath();
+        String xpathExpression = "//xref[@ref-type='bibr']/@rid";
+        XPathExpression expr = xpath.compile(xpathExpression);
+
+        NodeList paragraphsCitationsNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+
+        for (int i = 0; i < paragraphsCitationsNodes.getLength(); i++) {
+            Node node = paragraphsCitationsNodes.item(i);
+            if (node != null) {
+                String extractedContent = this.extractBibr(node.getTextContent(), xmlFile);
+                if (!extractedContent.isEmpty())
+                    citations.add(extractedContent);
+            }
+        }
+        return citations;
+    }
+	
+	private String extractBibr(String textContent, String xmlFile) throws XPathExpressionException, Exception {
+    	XPathFactory xPathFactory = XPathFactory.newInstance();
+		XPath xpath = xPathFactory.newXPath();
+		String xpathExpression = "//ref[@id='" + textContent + "']";
+		XPathExpression expr = xpath.compile(xpathExpression);
+		String extractContent = "";
+		
+		Node citationNode = (Node) expr.evaluate(this.loadXmlDocument(xmlFile), XPathConstants.NODE);
+		if(citationNode != null) {
+			extractContent = this.serializeNodeToString(citationNode);
+			extractContent = extractContent.replaceAll("<\\?xml.*\\?>", "");
+		}
+		return extractContent;
+	}
+
+	private void extractCells(String xmlFile) throws Exception {
+		Document document = this.loadXmlDocument(xmlFile);
+
+		XPathFactory xPathFactory = XPathFactory.newInstance();
+		XPath xpath = xPathFactory.newXPath();
+
 		String xpathExpression = "//table-wrap[@id='" + this.tableId + "']//td";
 		XPathExpression expr = xpath.compile(xpathExpression);
-		
+
 		NodeList contentCellsNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
 		Set<String> cellValues = new HashSet<String>();
-		
+
 		for(int i = 0; i<contentCellsNodes.getLength(); i++) {
 			Node node = contentCellsNodes.item(i);
 			if(node!=null){
 				cellValues.add(node.getTextContent());
 			}
 		}
-		
+
 		for(String cellValue: cellValues) {
 			Cell cell = new Cell();
 			if(!cellValue.isEmpty()) {
@@ -109,7 +174,7 @@ public class Table {
 				this.cells.add(cell);	
 			}
 		}
-		
+
 	}
 
 	private String extractCaption(String xmlFile) throws Exception {
@@ -119,11 +184,11 @@ public class Table {
 		XPath xpath = xPathFactory.newXPath();
 		String xpathExpression = "//table-wrap[@id='" + this.tableId + "']/caption";
 		XPathExpression expr = xpath.compile(xpathExpression);
-		
+
 		NodeList captionNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
 		String extractedContent = "";
 		String extractedContentNode = "";
-		
+
 		for(int i = 0; i<captionNodes.getLength(); i++) {
 			Node node = captionNodes.item(i);
 			if(node!=null){
@@ -134,7 +199,7 @@ public class Table {
 				extractedContent += extractedContentNode;
 			}
 		}
-		
+
 		return extractedContent;
 	}
 
@@ -161,7 +226,7 @@ public class Table {
 				}
 			}
 		}
-		
+
 		return foots;
 	}
 
@@ -172,7 +237,7 @@ public class Table {
 		XPath xpath = xPathFactory.newXPath();
 		String xpathExpression = "//table-wrap[@id='" + this.tableId + "']/caption/xref[@ref-type='bibr']/@rid";
 		XPathExpression expr = xpath.compile(xpathExpression);
-		
+
 		NodeList citationsCaptionNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
 		String extractedContent = "";
 		List<String> citations = new ArrayList<String>();
@@ -194,13 +259,13 @@ public class Table {
 		String xpathExpression = "//ref[@id='" + textContent + "']";
 		XPathExpression expr = xpath.compile(xpathExpression);
 		String extractContent = "";
-		
+
 		Node citationNode = (Node) expr.evaluate(document, XPathConstants.NODE);
 		if(citationNode != null) {
 			extractContent = this.serializeNodeToString(citationNode);
 			extractContent = extractContent.replaceAll("<\\?xml.*\\?>", "");
 		}
-		
+
 		return extractContent;
 	}
 
