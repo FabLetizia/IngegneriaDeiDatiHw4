@@ -2,9 +2,11 @@ package dataExtractions;
 
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -33,8 +35,8 @@ public class Table {
 	private String caption;
 	private List<String> captionCitations;
 	private List<String> foots;
-	private List<Paragraph> paragraphs;
-	private List<Cell> cells;
+	private List<Paragraph> paragraphs= new ArrayList<Paragraph>();
+	private List<Cell> cells = new ArrayList<Cell>();
 
 	public Map<String, Object> getTable(String xmlFile, String tableId) throws Exception {
 		this.tableId = tableId;
@@ -43,7 +45,7 @@ public class Table {
 		this.captionCitations = this.extractCaptionCitations(xmlFile);
 		this.foots = this.extractFoots(xmlFile);
 //		this.paragraphs = this.extractParagraphs(xmlFile);
-		
+		this.extractCells(xmlFile);
 	
 //		JSONObject jsonTable = new JSONObject();
 //        jsonTable.put("table_id", this.tableId);
@@ -52,6 +54,15 @@ public class Table {
         
         JSONArray jsonCaptionCitations = new JSONArray(this.captionCitations);
         JSONArray jsonFoots = new JSONArray(this.foots);
+        JSONArray jsonCells = new JSONArray();
+        
+        for(Cell cell: this.cells) {
+        	JSONObject jsonCellObject = new JSONObject();
+        	jsonCellObject.put("content", cell.getContent());
+        	JSONArray jsonCitedIn = new JSONArray(cell.getCitediIn());
+        	jsonCellObject.put("cited_in", jsonCitedIn);
+        	jsonCells.put(jsonCellObject);
+        }
         
 //        jsonTable.put("caption_citations", jsonCaptionCitations);
 //        jsonTable.put("foots", jsonFoots);
@@ -63,10 +74,42 @@ public class Table {
 		tableMap.put("caption", this.caption);
 		tableMap.put("caption_citations", jsonCaptionCitations);
 		tableMap.put("foots", jsonFoots);
+		tableMap.put("cells", jsonCells);
         
         
 		return tableMap;
 
+	}
+
+	private void extractCells(String xmlFile) throws Exception {
+		List<Cell> cells = new ArrayList<Cell>();
+		Document document = this.loadXmlDocument(xmlFile);
+		
+		XPathFactory xPathFactory = XPathFactory.newInstance();
+		XPath xpath = xPathFactory.newXPath();
+
+		String xpathExpression = "//table-wrap[@id='" + this.tableId + "']//td";
+		XPathExpression expr = xpath.compile(xpathExpression);
+		
+		NodeList contentCellsNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+		Set<String> cellValues = new HashSet<String>();
+		
+		for(int i = 0; i<contentCellsNodes.getLength(); i++) {
+			Node node = contentCellsNodes.item(i);
+			if(node!=null){
+				cellValues.add(node.getTextContent());
+			}
+		}
+		
+		for(String cellValue: cellValues) {
+			Cell cell = new Cell();
+			if(!cellValue.isEmpty()) {
+				cell.setContent(cellValue);
+				cell.setCitedIn(cellValue, document);
+				this.cells.add(cell);	
+			}
+		}
+		
 	}
 
 	private String extractCaption(String xmlFile) throws Exception {
@@ -137,7 +180,7 @@ public class Table {
 			Node node = citationsCaptionNodes.item(i);
 			if(node!=null) {
 				extractedContent = this.extractBibr(node.getTextContent(),document);
-				if(extractedContent.isEmpty()) {
+				if(!extractedContent.isEmpty()) {
 					citations.add(extractedContent);
 				}
 			}
