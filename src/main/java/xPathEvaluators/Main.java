@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -156,7 +157,7 @@ public class Main {
 		if (allXmlFiles != null) {
 			allXmlFiles.stream().forEach(xmlFile -> {
 				executorService.submit(() -> {
-					File currentJson = new File(jsonPath + "/" + xmlFile.getName().replaceAll(".xml", ".json"));
+					File currentJson = new File(jsonPath + "/pmcid_" + xmlFile.getName().replaceAll(".xml", ".json").replaceAll("PMC",""));
 					if (currentJson.exists()) {
 						System.out.println("Skipping " + xmlFile.getName() + ", his JSON has already been created");
 						return;
@@ -235,12 +236,24 @@ public class Main {
 						}
 
 					} catch (Exception e) {
-						e.printStackTrace();
+						//e.printStackTrace();
+						System.out.println("Extraction failed for " + xmlFile.getName() + ": something went wrong");
 					}
 				});
 			});
-			System.out.println("\nExtraction Completed!");
-			System.exit(0);
+			
+			executorService.shutdown();
+			
+			try {
+				if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
+					System.out.println("Timeout scaduto, alcuni task potrebbero non essere stati completati");
+				}
+			}
+			catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
+		System.out.println("\nExtraction Completed!");
+
 	}
 }
