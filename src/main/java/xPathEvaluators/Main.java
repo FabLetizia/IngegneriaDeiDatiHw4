@@ -239,6 +239,8 @@ public class Main {
 					}
 				});
 			});
+			System.out.println("\nExtraction Completed!");
+			System.exit(0);
 		}
 	}
 }
