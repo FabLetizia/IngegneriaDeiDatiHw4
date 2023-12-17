@@ -221,6 +221,7 @@ public class Main {
 						String filePath = jsonPath;
 						String filename = xmlFile.getName();
 						filename = filename.replace(".xml",".json");
+						filename = filename.replace("PMC", "pmcid_");
 						
 						ObjectMapper mapper = new ObjectMapper();
 						mapper.enable(SerializationFeature.INDENT_OUTPUT);
