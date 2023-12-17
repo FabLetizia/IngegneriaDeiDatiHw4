@@ -1,6 +1,5 @@
 package dataExtractions;
 
-import org.json.JSONArray;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -123,8 +122,6 @@ public class Figure {
         	}
         }
 		
-		
-		
 		return citations;
 	}
     
@@ -143,7 +140,7 @@ public class Figure {
 		return extractContent;
 	}
 
-    public Set<String> extractParagraphCitations(String xmlFile,Document document) throws Exception {
+    public List<String> extractParagraphCitations(String xmlFile,Document document) throws Exception {
         Set<String> citations = new HashSet<>();
         XPathFactory xPathFactory = XPathFactory.newInstance();
         XPath xpath = xPathFactory.newXPath();
@@ -160,12 +157,12 @@ public class Figure {
                     citations.add(extractedContent);
             }
         }
-        return citations;
+        return new ArrayList<String>(citations);
     }
     
     
-	public JSONArray extractParagraphs(String xmlFile, String figureId) throws Exception {
-    	JSONArray paragraphsArray = new JSONArray();
+	public List<Map<String, Object>> extractParagraphs(String xmlFile, String figureId) throws Exception {
+    	List<Map<String, Object>> paragraphs = new ArrayList<>();
     	
     	//Dato il figureId, estrai tutti i paragrafi -> primo step
         XPathFactory xPathFactory = XPathFactory.newInstance();
@@ -178,19 +175,23 @@ public class Figure {
 
         for(int i = 0; i<citationsNodes.getLength(); i++) {
             Node node = citationsNodes.item(i);
-            if(node!=null){
-                LinkedHashMap<String,Object> contentparagraph = new LinkedHashMap<>();
+            if(node != null) {
+                Map<String,Object> contentParagraph = new LinkedHashMap<>();
+                
                 extractedContentNode = this.serializeNodeToString(node);
                 extractedContentNode = extractedContentNode.replaceAll("<\\?xml.*\\?>", "");
-                contentparagraph.put("text",extractedContentNode);
+                contentParagraph.put("text", extractedContentNode);
+                
                 DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
                 DocumentBuilder builder = factory.newDocumentBuilder();
                 Document paragraphDocument = builder.parse(new org.xml.sax.InputSource(new java.io.StringReader(extractedContentNode)));
-                contentparagraph.put("citations", this.extractParagraphCitations(xmlFile,paragraphDocument));
-                paragraphsArray.put(i,contentparagraph);
+                contentParagraph.put("citations", this.extractParagraphCitations(xmlFile,paragraphDocument));
+                
+                paragraphs.add(contentParagraph);
             }
         }
-    	return paragraphsArray;
+        
+        return paragraphs;
     }
 
 

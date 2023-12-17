@@ -1,25 +1,30 @@
 package xPathEvaluators;
 
-import dataExtractions.Figure;
-import dataExtractions.Keywords;
-import dataExtractions.TableManagement;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.NodeList;
-
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.NotDirectoryException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.NodeList;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+
+import dataExtractions.Figure;
+import dataExtractions.Keywords;
+import dataExtractions.Table;
 
 public class Main {
 	private static final int SAMPLE_SIZE = 100;
@@ -79,6 +84,7 @@ public class Main {
 		generateJsonFiles(directoryPath, jsonPath);
 	}
 
+	
 	private static void benchmarkXPathExtraction(String directoryPath, String logFilePath) throws Exception {
 		// Extract a random sample of files
 		List<File> sampleFiles = FileUtil.getRandomSampleFromDirectory(directoryPath, SAMPLE_SIZE);
@@ -137,7 +143,7 @@ public class Main {
 		BaseXPathFinder dynamicXPathTitle = new TitleXPathFinder("//title-group/article-title");
 		BaseXPathFinder dynamicXPathAbstract = new AbstractXPathFinder("//abstract");
 		Keywords keywordsExtractor = new Keywords("//kwd");
-		TableManagement tableExtractor = new TableManagement();
+		Table tableExtractor = new Table();
 		Figure figureExtractor = new Figure();
 
 		// Get a list of all XML files in the directory
@@ -158,57 +164,72 @@ public class Main {
 					try {
 						// Use dynamicXPath or another suitable XPathFinder to extract structured information
 						// For simplicity, let's assume a method extractStructuredInfo() is available
-						String structuredInfoArticleId = dynamicXPathArticleID.extractValue(xmlFile.toURI().toASCIIString(),dynamicXPathArticleID.getBestXPath());
-						String structuredInfoTitle = dynamicXPathTitle.extractValue(xmlFile.toURI().toASCIIString(),dynamicXPathTitle.getBestXPath());
-						String structuredInfoAbstract = dynamicXPathAbstract.extractValue(xmlFile.toURI().toASCIIString(),dynamicXPathAbstract.getBestXPath());
-
-						// Generate JSON file with the structured information
-						JSONObject jsonObject = new JSONObject();
-						JSONArray keywordsArray = new JSONArray();
-						JSONArray figuresArray = new JSONArray();
-
-						NodeList keywords = keywordsExtractor.extractKeywords(xmlFile.toURI().toASCIIString());
+						Map<String, Object> jsonMap = new LinkedHashMap<>();
+						Map<String, Object> contentMap = new LinkedHashMap<>();
 						
-						NodeList figuresIDs = figureExtractor.extractIDs(xmlFile.toURI().toASCIIString());
-						for(int i = 0; i<keywords.getLength(); i++){
-							keywordsArray.put(i,keywords.item(i).getTextContent());
+						String structuredInfoArticleId = dynamicXPathArticleID.extractValue(xmlFile.toURI().toASCIIString(),dynamicXPathArticleID.getBestXPath());
+						jsonMap.put("pmcid", structuredInfoArticleId);
+						
+						String structuredInfoTitle = dynamicXPathTitle.extractValue(xmlFile.toURI().toASCIIString(),dynamicXPathTitle.getBestXPath());
+						contentMap.put("title", structuredInfoTitle);
+						String structuredInfoAbstract = dynamicXPathAbstract.extractValue(xmlFile.toURI().toASCIIString(),dynamicXPathAbstract.getBestXPath());
+						contentMap.put("abstract", structuredInfoAbstract);
+						
+						List<String> keywords = keywordsExtractor.extractKeywords(xmlFile.toURI().toASCIIString());
+						contentMap.put("keywords", keywords);
+						
+						List<Map<String, Object>> tables = new ArrayList<>();
+						
+						NodeList tableIDs = tableExtractor.extractIDs(xmlFile.toURI().toASCIIString());
+						
+						for (int i = 0; i < tableIDs.getLength(); i++) {
+							Map<String, Object> tableObject = new LinkedHashMap<>();
+							
+							tableObject.put("table_id", tableIDs.item(i).getTextContent());
+							tableObject.put("body", tableExtractor.extractBody(xmlFile.toURI().toASCIIString(), tableIDs.item(i).getTextContent()));
+							tableObject.put("caption", tableExtractor.extractCaption(xmlFile.toURI().toASCIIString(), tableIDs.item(i).getTextContent()));
+							tableObject.put("caption_citations", tableExtractor.extractCaptionCitations(xmlFile.toURI().toASCIIString(), tableIDs.item(i).getTextContent()));
+							tableObject.put("foots", tableExtractor.extractFoots(xmlFile.toURI().toASCIIString(), tableIDs.item(i).getTextContent()));
+							tableObject.put("paragraphs", tableExtractor.extractParagraphs(xmlFile.toURI().toASCIIString(), tableIDs.item(i).getTextContent()));
+							tableObject.put("cells", tableExtractor.extractCells(xmlFile.toURI().toASCIIString(), tableIDs.item(i).getTextContent()));
+							
+							tables.add(tableObject);
 						}
-
-						for(int i = 0; i<figuresIDs.getLength(); i++){
+						
+						contentMap.put("tables", tables);
+						
+						List<Map<String, Object>> figures = new ArrayList<>();
+						
+						NodeList figureIDs = figureExtractor.extractIDs(xmlFile.toURI().toASCIIString());
+						
+						for(int i = 0; i<figureIDs.getLength(); i++){
 							Map<String, Object> figureObject = new LinkedHashMap<>();
 			
-							figureObject.put("fig_id", figuresIDs.item(i).getTextContent());
-							figureObject.put("src", figureExtractor.extractSources(xmlFile.toURI().toASCIIString(), figuresIDs.item(i).getTextContent(), xmlFile.getName()));
-							figureObject.put("caption", figureExtractor.extractCaptions(xmlFile.toURI().toASCIIString(),figuresIDs.item(i).getTextContent()));
-							figureObject.put("caption_citations", figureExtractor.extractCaptionCitations(xmlFile.toURI().toASCIIString(), figuresIDs.item(i).getTextContent()));
-							figureObject.put("paragraphs", figureExtractor.extractParagraphs(xmlFile.toURI().toASCIIString(), figuresIDs.item(i).getTextContent()));
+							figureObject.put("fig_id", figureIDs.item(i).getTextContent());
+							figureObject.put("src", figureExtractor.extractSources(xmlFile.toURI().toASCIIString(), figureIDs.item(i).getTextContent(), xmlFile.getName()));
+							figureObject.put("caption", figureExtractor.extractCaptions(xmlFile.toURI().toASCIIString(),figureIDs.item(i).getTextContent()));
+							figureObject.put("caption_citations", figureExtractor.extractCaptionCitations(xmlFile.toURI().toASCIIString(), figureIDs.item(i).getTextContent()));
+							figureObject.put("paragraphs", figureExtractor.extractParagraphs(xmlFile.toURI().toASCIIString(), figureIDs.item(i).getTextContent()));
 							
-							figuresArray.put(i,figureObject);
+							figures.add(figureObject);
 						}
 						
+						contentMap.put("figures", figures);
 						
-						
-						Map<String, Object> contentMap = new LinkedHashMap<>();
-						contentMap.put("title", structuredInfoTitle);
-						contentMap.put("abstract", structuredInfoAbstract);
-						contentMap.put("keywords", keywordsArray);
-						contentMap.put("tables", tableExtractor.extractTables(xmlFile.toURI().toASCIIString()));
-						contentMap.put("figures", figuresArray);
+						jsonMap.put("content", contentMap);
 
-						// Add the key-value pair to the JSON object
-						jsonObject.put("pmcid", structuredInfoArticleId);
-						jsonObject.put("content",contentMap);
-
-						// Specify the file path where you want to save the JSON file
 						String filePath = jsonPath;
 						String filename = xmlFile.getName();
 						filename = filename.replace(".xml",".json");
-
-						try (FileWriter fileWriter = new FileWriter(filePath+"/"+filename)) {
-							// Scrive l'oggetto JSON nel file
-							fileWriter.write(jsonObject.toString(2)); // L'argomento 2 è per l'indentazione (opzionale)
+						
+						ObjectMapper mapper = new ObjectMapper();
+						mapper.enable(SerializationFeature.INDENT_OUTPUT);
+						
+						try {
+							mapper.writeValue(new File(filePath + "/" + filename), jsonMap);
 							System.out.println("Generated JSON for: " + xmlFile.getName());
-						} catch (IOException e) {
+						}
+						catch (Exception e) {
 							e.printStackTrace();
 						}
 

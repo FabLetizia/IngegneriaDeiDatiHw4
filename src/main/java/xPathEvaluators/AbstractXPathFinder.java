@@ -38,7 +38,7 @@ public class AbstractXPathFinder extends BaseXPathFinder{
 	public List<String> generateDynamicXPaths() {
 		// Implementa la logica per generare espressioni XPath dinamiche basate sul tuo caso specifico
 		List<String> xpaths = new ArrayList<>();
-//		xpaths.add("//abstract/p | //abstract/sec");
+		//		xpaths.add("//abstract/p | //abstract/sec");
 		xpaths.add("//abstract");
 
 		//xpaths.add("//id");
@@ -51,8 +51,31 @@ public class AbstractXPathFinder extends BaseXPathFinder{
 		Document document = this.loadXmlDocument(xmlFile);
 		// Esegui la query XPath sul documento
 		XPathFactory xPathFactory = XPathFactory.newInstance();
-		XPath expr = xPathFactory.newXPath();
-		return expr.evaluate(xpath, document);
+		XPath xPath = xPathFactory.newXPath();
+		XPathExpression expr = xPath.compile(xpath);
+		//return expr.evaluate(xpath, document);
+
+		String extractedContent = "";
+		String extractedContentNode = "";
+
+		NodeList abstractNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+		for(int i = 0; i<abstractNodes.getLength(); i++) {
+			Node node = abstractNodes.item(i);
+			if(node!=null){
+				try {
+					extractedContentNode = this.serializeNodeToString(node);
+					extractedContentNode = extractedContentNode.replaceAll("<\\?xml.*\\?>", "");
+					extractedContentNode = extractedContentNode.replaceAll("<abstract[^>]*>", "");
+					extractedContentNode = extractedContentNode.replaceAll("</abstract>", "");
+					extractedContent += extractedContentNode;
+				}
+
+				catch (RuntimeException e) {
+					continue;
+				}
+			}
+		}
+		return extractedContent;
 	}
 
 	@Override
@@ -81,16 +104,16 @@ public class AbstractXPathFinder extends BaseXPathFinder{
 				Node node = abstractNodes.item(i);
 				if(node!=null){
 					try {
-					extractedContentNode = this.serializeNodeToString(node);
-					extractedContentNode = extractedContentNode.replaceAll("<\\?xml.*\\?>", "");
-					extractedContentNode = extractedContentNode.replaceAll("<abstract[^>]*>", "");
-					extractedContentNode = extractedContentNode.replaceAll("</abstract>", "");
-					extractedContent += extractedContentNode;
-					
-					Integer value = this.expression2score.get(dynamicXPath);
-					this.expression2score.put(dynamicXPath, value+1);
+						extractedContentNode = this.serializeNodeToString(node);
+						extractedContentNode = extractedContentNode.replaceAll("<\\?xml.*\\?>", "");
+						extractedContentNode = extractedContentNode.replaceAll("<abstract[^>]*>", "");
+						extractedContentNode = extractedContentNode.replaceAll("</abstract>", "");
+						extractedContent += extractedContentNode;
+
+						Integer value = this.expression2score.get(dynamicXPath);
+						this.expression2score.put(dynamicXPath, value+1);
 					}
-					
+
 					catch (RuntimeException e) {
 						continue;
 					}
@@ -103,7 +126,7 @@ public class AbstractXPathFinder extends BaseXPathFinder{
 			//					this.expression2score.put(dynamicXPath, value+1);
 			//				}
 
-			
+
 
 			logger.info("XPath: {}", dynamicXPath);
 			logger.info("Extracted Value: {}", extractedContent);
@@ -128,7 +151,7 @@ public class AbstractXPathFinder extends BaseXPathFinder{
 			Transformer transformer = transformerFactory.newTransformer();
 
 			// Configura l'output per indentare la stringa XML
-			transformer.setOutputProperty(javax.xml.transform.OutputKeys.INDENT, "yes");
+			transformer.setOutputProperty(javax.xml.transform.OutputKeys.INDENT, "no");
 
 			// Crea un DOMSource dal nodo
 			DOMSource source = new DOMSource(node);

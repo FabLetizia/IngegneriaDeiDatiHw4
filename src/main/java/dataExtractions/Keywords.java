@@ -1,7 +1,7 @@
 package dataExtractions;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -9,6 +9,10 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathFactory;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 public class Keywords {
 
@@ -22,14 +26,25 @@ public class Keywords {
     public String getBestXPath() {
         return bestXPath;
     }
-    public NodeList extractKeywords(String xmlFile) throws Exception {
+    
+    public List<String> extractKeywords(String xmlFile) throws Exception {
+    	List<String> keywords = new ArrayList<>();
+    	
         Document document = this.loadXmlDocument(xmlFile);
         XPathFactory xPathFactory = XPathFactory.newInstance();
         XPath xpath = xPathFactory.newXPath();
         XPathExpression expr = xpath.compile(this.getBestXPath());
         NodeList keywordList = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
-        return keywordList;
+        
+        for(int i = 0; i < keywordList.getLength(); i++) {
+        	Node node = keywordList.item(i);
+        	if (node != null)
+        		keywords.add(node.getTextContent());
+        }
+        
+        return keywords;
     }
+    
     public Document loadXmlDocument(String xmlFile) throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();

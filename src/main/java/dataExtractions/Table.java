@@ -20,77 +20,21 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import netscape.javascript.JSObject;
-
 public class Table {
 
-	private String tableId;
-	private String body;
-	private String caption;
-	private List<String> captionCitations;
-	private List<String> foots;
-	private List<Paragraph> paragraphs= new ArrayList<Paragraph>();
-	private List<Cell> cells = new ArrayList<Cell>();
+	public List<Map<String, Object>> extractParagraphs(String xmlFile, String tableId) throws Exception {
+		List<Map<String, Object>> paragraphs = new ArrayList<>();
 
-	public Map<String, Object> getTable(String xmlFile, String tableId) throws Exception {
-		this.tableId = tableId;
-		this.body = this.extractBody(xmlFile);
-		this.caption = this.extractCaption(xmlFile);
-		this.captionCitations = this.extractCaptionCitations(xmlFile);
-		this.foots = this.extractFoots(xmlFile);
-		this.extractCells(xmlFile);
-
-		//		JSONObject jsonTable = new JSONObject();
-		//        jsonTable.put("table_id", this.tableId);
-		//        jsonTable.put("body", this.body);
-		//        jsonTable.put("caption", this.caption);
-
-		JSONArray jsonCaptionCitations = new JSONArray(this.captionCitations);
-		JSONArray jsonFoots = new JSONArray(this.foots);
-		JSONArray jsonCells = new JSONArray();
-		JSONArray jsonParagraphs = this.extractParagraphs(xmlFile);
-
-		for(Cell cell: this.cells) {
-			JSONObject jsonCellObject = new JSONObject();
-			jsonCellObject.put("content", cell.getContent());
-			JSONArray jsonCitedIn = new JSONArray(cell.getCitediIn());
-			jsonCellObject.put("cited_in", jsonCitedIn);
-			jsonCells.put(jsonCellObject);
-		}
-
-		//        jsonTable.put("caption_citations", jsonCaptionCitations);
-		//        jsonTable.put("foots", jsonFoots);
-
-
-		Map<String, Object> tableMap = new LinkedHashMap<>();
-		tableMap.put("table_id", this.tableId);
-		tableMap.put("body", this.body);
-		tableMap.put("caption", this.caption);
-		tableMap.put("caption_citations", jsonCaptionCitations);
-		tableMap.put("foots", jsonFoots);
-		tableMap.put("paragraphs", jsonParagraphs);
-		tableMap.put("cells", jsonCells);
-		
-
-
-		return tableMap;
-
-	}
-
-	private JSONArray extractParagraphs(String xmlFile) throws Exception {
-		JSONArray paragraphsArray = new JSONArray();
 		Document document = this.loadXmlDocument(xmlFile);
-		
+
 		XPathFactory xPathFactory = XPathFactory.newInstance();
 		XPath xpath = xPathFactory.newXPath();
 
-		String xpathExpression = "//xref[@ref-type='table' and @rid='" + this.tableId + "']/..";
+		String xpathExpression = "//xref[@ref-type='table' and @rid='" + tableId + "']/..";
 		XPathExpression expr = xpath.compile(xpathExpression);
 		NodeList citationsNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
 		String extractedContentNode = "";
@@ -98,47 +42,51 @@ public class Table {
 		for(int i = 0; i<citationsNodes.getLength(); i++) {
 			Node node = citationsNodes.item(i);
 			if(node!=null){
-				LinkedHashMap<String,Object> contentparagraph = new LinkedHashMap<>();
+				LinkedHashMap<String,Object> contentParagraph = new LinkedHashMap<>();
+
 				extractedContentNode = this.serializeNodeToString(node);
 				extractedContentNode = extractedContentNode.replaceAll("<\\?xml.*\\?>", "");
-				contentparagraph.put("text",extractedContentNode);
+				contentParagraph.put("text",extractedContentNode);
+
 				DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 				DocumentBuilder builder = factory.newDocumentBuilder();
 				Document paragraphDocument = builder.parse(new org.xml.sax.InputSource(new java.io.StringReader(extractedContentNode)));
-				contentparagraph.put("citations", this.extractParagraphCitations(xmlFile,paragraphDocument));
-				paragraphsArray.put(i,contentparagraph);
+				contentParagraph.put("citations", this.extractParagraphCitations(xmlFile,paragraphDocument));
+
+				paragraphs.add(contentParagraph);
 			}
 		}
-		return paragraphsArray;
+
+		return paragraphs;
 	}
-	
+
 	public Set<String> extractParagraphCitations(String xmlFile,Document document) throws Exception {
-        Set<String> citations = new HashSet<>();
-        XPathFactory xPathFactory = XPathFactory.newInstance();
-        XPath xpath = xPathFactory.newXPath();
-        String xpathExpression = "//xref[@ref-type='bibr']/@rid";
-        XPathExpression expr = xpath.compile(xpathExpression);
+		Set<String> citations = new HashSet<>();
+		XPathFactory xPathFactory = XPathFactory.newInstance();
+		XPath xpath = xPathFactory.newXPath();
+		String xpathExpression = "//xref[@ref-type='bibr']/@rid";
+		XPathExpression expr = xpath.compile(xpathExpression);
 
-        NodeList paragraphsCitationsNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+		NodeList paragraphsCitationsNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
 
-        for (int i = 0; i < paragraphsCitationsNodes.getLength(); i++) {
-            Node node = paragraphsCitationsNodes.item(i);
-            if (node != null) {
-                String extractedContent = this.extractBibr(node.getTextContent(), xmlFile);
-                if (!extractedContent.isEmpty())
-                    citations.add(extractedContent);
-            }
-        }
-        return citations;
-    }
-	
+		for (int i = 0; i < paragraphsCitationsNodes.getLength(); i++) {
+			Node node = paragraphsCitationsNodes.item(i);
+			if (node != null) {
+				String extractedContent = this.extractBibr(node.getTextContent(), xmlFile);
+				if (!extractedContent.isEmpty())
+					citations.add(extractedContent);
+			}
+		}
+		return citations;
+	}
+
 	private String extractBibr(String textContent, String xmlFile) throws XPathExpressionException, Exception {
-    	XPathFactory xPathFactory = XPathFactory.newInstance();
+		XPathFactory xPathFactory = XPathFactory.newInstance();
 		XPath xpath = xPathFactory.newXPath();
 		String xpathExpression = "//ref[@id='" + textContent + "']";
 		XPathExpression expr = xpath.compile(xpathExpression);
 		String extractContent = "";
-		
+
 		Node citationNode = (Node) expr.evaluate(this.loadXmlDocument(xmlFile), XPathConstants.NODE);
 		if(citationNode != null) {
 			extractContent = this.serializeNodeToString(citationNode);
@@ -147,13 +95,15 @@ public class Table {
 		return extractContent;
 	}
 
-	private void extractCells(String xmlFile) throws Exception {
+	public List<Map<String, Object>> extractCells(String xmlFile, String tableId) throws Exception {
+		List<Map<String, Object>> cells = new ArrayList<>();
+
 		Document document = this.loadXmlDocument(xmlFile);
 
 		XPathFactory xPathFactory = XPathFactory.newInstance();
 		XPath xpath = xPathFactory.newXPath();
 
-		String xpathExpression = "//table-wrap[@id='" + this.tableId + "']//td";
+		String xpathExpression = "//table-wrap[@id='" + tableId + "']//td";
 		XPathExpression expr = xpath.compile(xpathExpression);
 
 		NodeList contentCellsNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
@@ -161,28 +111,56 @@ public class Table {
 
 		for(int i = 0; i<contentCellsNodes.getLength(); i++) {
 			Node node = contentCellsNodes.item(i);
-			if(node!=null){
+			if(node!=null && node.getTextContent() != ""){
 				cellValues.add(node.getTextContent());
 			}
 		}
 
-		for(String cellValue: cellValues) {
-			Cell cell = new Cell();
-			if(!cellValue.isEmpty()) {
-				cell.setContent(cellValue);
-				cell.setCitedIn(cellValue, document);
-				this.cells.add(cell);	
-			}
+		for (String c: cellValues) {			
+			Map<String, Object> cell = new LinkedHashMap<>();
+			cell.put("content", c);
+			cell.put("cited_in", this.extractCellCitedIn(c, document));
+			
+			cells.add(cell);
 		}
+
+		return cells;
 
 	}
 
-	private String extractCaption(String xmlFile) throws Exception {
+	public List<String> extractCellCitedIn(String term, Document document) throws Exception {
+		List<String> citedIn = new ArrayList<>();
+		term = term.replaceAll("'", "");
+
+		XPathFactory xPathFactory = XPathFactory.newInstance();
+		XPath xpath = xPathFactory.newXPath();
+
+		String xpathExpression = "//p[contains(.,'" + term + "')] | //p[contains(.,'" + term.toLowerCase() + "')] | "
+				+ "//p[contains(.,'" + term.toUpperCase() + "')] ";
+		XPathExpression expr = xpath.compile(xpathExpression);
+
+		NodeList citationsNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+		String extractedContent = "";
+		String extractedContentNode = "";
+
+		for(int i = 0; i < citationsNodes.getLength(); i++) {
+			Node node = citationsNodes.item(i);
+			if (node != null) {
+				extractedContentNode = this.serializeNodeToString(node);
+				extractedContent = extractedContentNode.replaceAll("<\\?xml.*\\?>", "");
+				citedIn.add(extractedContent);
+			}
+		}
+
+		return citedIn;
+	}
+
+	public String extractCaption(String xmlFile, String tableId) throws Exception {
 		Document document = this.loadXmlDocument(xmlFile);
 
 		XPathFactory xPathFactory = XPathFactory.newInstance();
 		XPath xpath = xPathFactory.newXPath();
-		String xpathExpression = "//table-wrap[@id='" + this.tableId + "']/caption";
+		String xpathExpression = "//table-wrap[@id='" + tableId + "']/caption";
 		XPathExpression expr = xpath.compile(xpathExpression);
 
 		NodeList captionNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
@@ -195,7 +173,6 @@ public class Table {
 				extractedContentNode = this.serializeNodeToString(node);
 				extractedContentNode = extractedContentNode.replaceAll("<\\?xml.*\\?><caption>", "");
 				extractedContentNode = extractedContentNode.replaceAll("</caption>", "");
-				//captions.add(extractedContentNode);
 				extractedContent += extractedContentNode;
 			}
 		}
@@ -203,13 +180,13 @@ public class Table {
 		return extractedContent;
 	}
 
-	private List<String> extractFoots(String xmlFile) throws Exception {
+	public List<String> extractFoots(String xmlFile, String tableId) throws Exception {
 		Document document = this.loadXmlDocument(xmlFile);
 
 		XPathFactory xPathFactory = XPathFactory.newInstance();
 		XPath xpath = xPathFactory.newXPath();
 		//table-wrap[@id='table_id']/table[@frame='hsides' and @rules='groups']/thead | //table-wrap[@id='table_id']/table[@frame='hsides' and @rules='groups']/tbody
-		String xpathExpression = "//table-wrap[@id='" + this.tableId + "']/table-wrap-foot//p";
+		String xpathExpression = "//table-wrap[@id='" + tableId + "']/table-wrap-foot//p";
 		XPathExpression expr = xpath.compile(xpathExpression);
 		NodeList footsNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
 		String extractedContent = "";
@@ -230,12 +207,12 @@ public class Table {
 		return foots;
 	}
 
-	private List<String> extractCaptionCitations(String xmlFile) throws Exception {
+	public List<String> extractCaptionCitations(String xmlFile, String tableId) throws Exception {
 		Document document = this.loadXmlDocument(xmlFile);
 
 		XPathFactory xPathFactory = XPathFactory.newInstance();
 		XPath xpath = xPathFactory.newXPath();
-		String xpathExpression = "//table-wrap[@id='" + this.tableId + "']/caption/xref[@ref-type='bibr']/@rid";
+		String xpathExpression = "//table-wrap[@id='" + tableId + "']/caption/xref[@ref-type='bibr']/@rid";
 		XPathExpression expr = xpath.compile(xpathExpression);
 
 		NodeList citationsCaptionNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
@@ -269,12 +246,12 @@ public class Table {
 		return extractContent;
 	}
 
-	private String extractBody(String xmlFile) throws Exception {
+	public String extractBody(String xmlFile, String tableId) throws Exception {
 		Document document = this.loadXmlDocument(xmlFile);
 
 		XPathFactory xPathFactory = XPathFactory.newInstance();
 		XPath xpath = xPathFactory.newXPath();
-		String xpathExpression = "//table-wrap[@id='" + this.tableId + "']/table/thead | //table-wrap[@id='" + this.tableId + "']/table/tbody";
+		String xpathExpression = "//table-wrap[@id='" + tableId + "']/table/thead | //table-wrap[@id='" + tableId + "']/table/tbody";
 		XPathExpression expr = xpath.compile(xpathExpression);
 
 		NodeList bodyNodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
@@ -324,6 +301,15 @@ public class Table {
 			e.printStackTrace();
 			return "";
 		}
+	}
+
+	public NodeList extractIDs(String xmlFile) throws Exception {
+		Document document = this.loadXmlDocument(xmlFile);
+		XPathFactory xPathFactory = XPathFactory.newInstance();
+		XPath xpath = xPathFactory.newXPath();
+		XPathExpression expr = xpath.compile("//table-wrap[@id]/@id");
+		NodeList tablesID = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+		return tablesID;
 	}
 
 }
